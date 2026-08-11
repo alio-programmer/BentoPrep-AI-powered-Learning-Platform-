@@ -110,9 +110,11 @@ Tutor: "Notice that for each fixed element i, you are running an O(N) search. Ha
       <header className="sticky top-0 z-50 border-b border-line bg-bg/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex size-6 items-center justify-center rounded bg-accent text-xs font-bold text-white">
-              P
-            </div>
+            <img
+              src="/3d6ade27-99d7-48e9-923f-06738c0f0ee4.png"
+              alt="BentoPrep logo"
+              className="size-6 rounded object-cover"
+            />
             <span className="text-sm font-bold tracking-tight text-ink">BentoPrep</span>
           </Link>
 
@@ -698,9 +700,11 @@ Tutor: "Notice that for each fixed element i, you are running an O(N) search. Ha
       <footer className="relative z-10 border-t border-line bg-surface py-8 text-xs text-muted">
         <div className="mx-auto max-w-6xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
           <div className="flex items-center gap-2">
-            <div className="size-5 rounded bg-accent text-white flex items-center justify-center text-[10px] font-bold">
-              P
-            </div>
+            <img
+              src="/3d6ade27-99d7-48e9-923f-06738c0f0ee4.png"
+              alt="BentoPrep logo"
+              className="size-5 rounded object-cover"
+            />
             <span className="text-ink font-bold">BentoPrep</span>
             <span className="text-[11px] text-muted">— Spaced Repetition OS</span>
           </div>

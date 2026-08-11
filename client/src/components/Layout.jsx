@@ -51,9 +51,11 @@ function SidebarContent({ onNavigate }) {
         }}
         className="flex items-center gap-2.5 px-5 py-5 text-left"
       >
-        <div className="flex size-8 items-center justify-center rounded-lg bg-accent text-sm font-bold text-white shadow-sm shadow-accent/30">
-          BP
-        </div>
+        <img
+          src="/3d6ade27-99d7-48e9-923f-06738c0f0ee4.png"
+          alt="BentoPrep logo"
+          className="size-8 rounded-lg object-cover"
+        />
         <div>
           <p className="text-sm font-bold leading-none">BentoPrep</p>
           <p className="mt-0.5 text-[10px] text-muted">Interview Prep OS</p>
