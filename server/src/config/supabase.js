@@ -14,10 +14,24 @@ if (!isConfigured) {
   );
 }
 
+function getValidUrl(rawUrl) {
+  if (!rawUrl) return 'https://placeholder.supabase.co';
+  let formatted = rawUrl.trim();
+  if (!/^https?:\/\//i.test(formatted)) {
+    formatted = `https://${formatted}`;
+  }
+  try {
+    new URL(formatted);
+    return formatted;
+  } catch {
+    return 'https://placeholder.supabase.co';
+  }
+}
+
 // Placeholder values let the server boot for a health check even when
 // credentials aren't configured yet; requests will fail gracefully.
 export const supabase = createClient(
-  url || 'https://placeholder.supabase.co',
+  getValidUrl(url),
   serviceKey || 'placeholder-service-key',
   { auth: { persistSession: false } }
 );
