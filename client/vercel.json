@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://bentoprep-ai-powered-learning-platform-production.up.railway.app/"
+      "destination": "https://bentoprep-ai-powered-learning-platform-production.up.railway.app/api/:path*"
     },
     {
       "source": "/(.*)",
