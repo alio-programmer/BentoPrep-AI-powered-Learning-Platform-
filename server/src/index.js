@@ -54,5 +54,5 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`BentoPrep server running on http://0.0.0.0:${PORT}`);
+  console.log(`BentoPrep server running on http://localhost:${PORT}`);
 });
