@@ -1,0 +1,1281 @@
+# Build: AI-Powered DSA & Interview Preparation Platform
+
+Build a production-quality web application that acts as a **one-stop AI tutor and interview preparation platform** for software engineering and technical interviews.
+
+The application should combine:
+
+1. DSA problem tracking
+2. Personal solution/memory cards
+3. Spaced-repetition revision
+4. Personalized DSA roadmaps
+5. AI-powered tutoring
+6. Company-specific interview preparation
+7. Coding interview simulation
+8. CS fundamentals preparation
+9. Resume/job-description analysis
+10. Progress analytics
+
+The goal is to help a developer go from their current skill level to being **interview-ready for a specific company and role**.
+
+---
+
+# 1. Product Vision
+
+The application should feel like having a personal AI interview coach.
+
+A user should be able to say:
+
+> "I want to prepare for a Google Software Engineer interview in 60 days."
+
+The application should analyze the user's current skills, available time, target role, target company, and previous performance and generate a personalized preparation plan.
+
+For example:
+
+### Day 1
+
+* Arrays — Two Sum
+* Arrays — Best Time to Buy and Sell Stock
+* Learn: Hash Maps
+* 20 min concept revision
+* 10 min behavioral preparation
+
+### Day 2
+
+* Strings — Valid Anagram
+* Hashing — Group Anagrams
+* Review yesterday's mistakes
+
+### Day 3
+
+* Revision Day
+* Reattempt Two Sum without looking at the solution
+* AI-generated variations
+* Mini quiz
+
+### Day 4
+
+* Sliding Window
+* Longest Substring Without Repeating Characters
+* AI explanation
+
+The system should dynamically adjust the schedule based on performance.
+
+---
+
+# 2. Core Dashboard
+
+Create a modern, clean, highly interactive dashboard.
+
+The dashboard should immediately show:
+
+### Today's Plan
+
+Example:
+
+**Day 17 / 45**
+
+Progress: `38%`
+
+Today's objectives:
+
+* [ ] 2 New DSA Problems
+* [ ] Revise 3 Previous Problems
+* [ ] 20 min System Design
+* [ ] 10 min CS Fundamentals
+* [ ] 1 AI Interview Question
+
+Show a prominent:
+
+**"Start Today's Session"**
+
+button.
+
+---
+
+# 3. DSA Problem Tracker
+
+Create a dedicated DSA section.
+
+Users should be able to add a problem manually.
+
+Fields:
+
+* Problem name
+* Platform
+
+  * LeetCode
+  * Codeforces
+  * HackerRank
+  * GeeksForGeeks
+  * Other
+* Problem URL
+* Difficulty
+
+  * Easy
+  * Medium
+  * Hard
+* Topic
+
+  * Arrays
+  * Strings
+  * Hashing
+  * Linked Lists
+  * Stack
+  * Queue
+  * Trees
+  * Graphs
+  * Dynamic Programming
+  * Greedy
+  * Backtracking
+  * Binary Search
+  * Sliding Window
+  * Two Pointers
+  * Heap
+  * Trie
+  * Bit Manipulation
+  * Recursion
+  * etc.
+* Date solved
+* Programming language
+* Time taken
+* Attempts
+* Solved independently?
+* Confidence level
+* Difficulty experienced
+
+Most importantly, allow the user to record:
+
+### "How I solved it"
+
+This should be the central feature.
+
+Example:
+
+> I initially tried brute force O(n²). Then realized that I could use a HashMap to store previously seen values and check whether target-current existed. This reduced the solution to O(n).
+
+Also include:
+
+### Key Insight
+
+### Mistake I Made
+
+### Why My First Approach Failed
+
+### Pattern / Technique
+
+### Time Complexity
+
+### Space Complexity
+
+### Code
+
+### Alternative Approach
+
+### When to Use This Pattern
+
+---
+
+# 4. Memory Cards
+
+Every solved problem should automatically become a **DSA Memory Card**.
+
+Example:
+
+---
+
+## Two Sum
+
+**Pattern:** Hash Map
+
+**Core Insight**
+
+Store previously seen values and search for the complement.
+
+**Mental Trigger**
+
+> "Need to find two values satisfying a condition → think HashMap."
+
+**Complexity**
+
+O(n) time
+O(n) space
+
+**My Mistake**
+
+Initially attempted nested loops.
+
+**Remember**
+
+Hashing allows constant-time average lookup.
+
+---
+
+The user should be able to review these cards later.
+
+Cards should support:
+
+* Flip animation
+* Mark as remembered
+* Mark as difficult
+* Mark as forgotten
+* Edit
+* Add notes
+* Add tags
+* AI explanation
+* AI-generated variation
+
+---
+
+# 5. Spaced Repetition Engine
+
+Implement an intelligent revision system.
+
+Do NOT simply schedule revision randomly.
+
+Use spaced repetition principles.
+
+For example:
+
+Problem solved today:
+
+Revision schedule:
+
+* Day 1
+* Day 3
+* Day 7
+* Day 14
+* Day 30
+* Day 60
+
+But dynamically adjust this based on:
+
+* Confidence
+* Previous mistakes
+* Number of failed attempts
+* Time since last review
+* Whether user remembered the solution
+* Difficulty
+* Performance history
+
+If a user forgets a problem, decrease its interval and bring it back sooner.
+
+Example:
+
+User forgets "Binary Tree Maximum Path Sum."
+
+System:
+
+> You struggled with this problem twice. I'll bring it back tomorrow instead of next week.
+
+---
+
+# 6. 45-Day DSA Roadmap Generator
+
+This is one of the most important features.
+
+The user selects:
+
+### Preparation Duration
+
+* 15 days
+* 30 days
+* 45 days
+* 60 days
+* 90 days
+* Custom
+
+Then asks:
+
+### Current Level
+
+* Beginner
+* Intermediate
+* Advanced
+
+### Target
+
+* General DSA
+* FAANG
+* Product Companies
+* Startup
+* Specific Company
+
+### Daily Availability
+
+* 30 minutes
+* 1 hour
+* 2 hours
+* 3+ hours
+
+The AI generates a structured calendar.
+
+Example:
+
+---
+
+### WEEK 1 — Foundations
+
+Day 1:
+
+* Arrays
+* Two Sum
+* Contains Duplicate
+
+Day 2:
+
+* Strings
+* Valid Anagram
+* Valid Palindrome
+
+Day 3:
+
+* Revision
+* Reattempt previous problems
+
+Day 4:
+
+* Hash Maps
+* Group Anagrams
+
+Day 5:
+
+* Two Pointers
+
+Day 6:
+
+* Mixed Practice
+
+Day 7:
+
+* Weekly Assessment
+
+---
+
+The calendar should visually display:
+
+**New Problems**
+
+**Revision**
+
+**Assessment**
+
+**Concept Learning**
+
+**Mock Interview**
+
+Use different visual states for each.
+
+---
+
+# 7. Adaptive Roadmap
+
+The roadmap must NOT be static.
+
+If the user performs poorly on Graphs:
+
+The AI should automatically increase graph-related problems.
+
+If the user performs extremely well on Arrays:
+
+Reduce repetition and allocate more time to weaker topics.
+
+Example:
+
+> Your Array performance is 87%, but Dynamic Programming is only 42%. I've reduced Array practice and increased DP sessions for the next 10 days.
+
+Allow the user to manually override the AI plan.
+
+---
+
+# 8. AI Tutor
+
+Create a dedicated AI Tutor interface.
+
+The user should be able to ask questions such as:
+
+> Explain sliding window.
+
+> Give me a hint for this problem but don't give me the answer.
+
+> Why is my solution O(n²)?
+
+> Explain this code.
+
+> Give me a harder version of this problem.
+
+> Quiz me on binary trees.
+
+> I don't understand recursion.
+
+The AI should have different modes:
+
+### Hint Mode
+
+Only provide progressive hints.
+
+Never immediately reveal the solution.
+
+### Socratic Mode
+
+Ask questions that make the user discover the answer.
+
+### Explain Mode
+
+Explain the concept from beginner to advanced.
+
+### Code Review Mode
+
+Analyze the user's code.
+
+### Interviewer Mode
+
+Act like a real interviewer.
+
+---
+
+# 9. AI Interview Simulator
+
+Create a full mock interview mode.
+
+User selects:
+
+### Company
+
+Google
+Amazon
+Microsoft
+Meta
+Apple
+Netflix
+Uber
+Databricks
+Atlassian
+Adobe
+etc.
+
+### Role
+
+* Software Engineer
+* Backend Engineer
+* Data Engineer
+* ML Engineer
+* Full Stack Engineer
+
+### Experience
+
+* Fresher
+* 0–2 years
+* 2–5 years
+* 5+ years
+
+The AI should conduct an interview.
+
+Example:
+
+AI:
+
+> Let's start with a medium-level array problem.
+
+User responds.
+
+AI evaluates:
+
+* Problem understanding
+* Approach
+* Communication
+* Complexity analysis
+* Coding
+* Edge cases
+* Optimization
+
+At the end provide:
+
+### Interview Score
+
+82/100
+
+### Strengths
+
+* Strong problem decomposition
+* Good complexity analysis
+
+### Weaknesses
+
+* Missed edge cases
+* Communication could be clearer
+
+### Recommendation
+
+Practice sliding window and edge-case analysis.
+
+---
+
+# 10. Company Preparation
+
+Create a "Companies" section.
+
+Users can select a company.
+
+Each company page should show:
+
+### Company
+
+Google
+
+### Target Role
+
+Software Engineer
+
+### Preparation Progress
+
+62%
+
+### Important Topics
+
+* Arrays
+* Graphs
+* Dynamic Programming
+* System Design
+* Behavioral
+
+### Interview Preparation
+
+* DSA
+* System Design
+* CS Fundamentals
+* Behavioral
+* Resume
+* Projects
+
+Allow the AI to generate a company-specific preparation roadmap.
+
+---
+
+# 11. Job Description Analyzer
+
+Allow the user to paste a job description.
+
+The AI should analyze it and extract:
+
+### Required Skills
+
+Python
+SQL
+AWS
+Spark
+Kafka
+
+### Preferred Skills
+
+Docker
+Kubernetes
+Airflow
+
+### Interview Topics
+
+Data Structures
+Distributed Systems
+SQL
+Cloud
+
+Then compare:
+
+**Job Requirements vs User Skills**
+
+Example:
+
+| Skill      | Requirement | Your Level |
+| ---------- | ----------- | ---------- |
+| Python     | Required    | Strong     |
+| SQL        | Required    | Strong     |
+| Kafka      | Required    | Medium     |
+| Kubernetes | Preferred   | Weak       |
+
+Then generate:
+
+### Skill Gap
+
+and:
+
+### Preparation Plan
+
+---
+
+# 12. Resume Analyzer
+
+Allow users to upload their resume.
+
+AI should analyze:
+
+* ATS compatibility
+* Missing keywords
+* Weak bullet points
+* Impact metrics
+* Technical skills
+* Experience relevance
+* Project quality
+
+Then compare the resume against a selected job description.
+
+Example:
+
+> Your resume matches 74% of this job description.
+
+Missing:
+
+* Kafka
+* Kubernetes
+* Distributed Systems
+
+Provide recommendations.
+
+---
+
+# 13. CS Fundamentals
+
+Create a learning section for:
+
+### Computer Science
+
+* Operating Systems
+* DBMS
+* Computer Networks
+* OOP
+* System Design
+* Distributed Systems
+* Computer Architecture
+
+Each topic should contain:
+
+* Concepts
+* Notes
+* Flashcards
+* AI tutor
+* MCQs
+* Interview questions
+* Revision schedule
+
+---
+
+# 14. SQL Interview Preparation
+
+Create a dedicated SQL practice module.
+
+Include:
+
+* Basic SQL
+* Joins
+* Aggregations
+* Subqueries
+* CTEs
+* Window Functions
+* Ranking
+* Date functions
+* Advanced SQL
+
+Users should be able to solve SQL questions and save:
+
+* Query
+* Approach
+* Mistake
+* Explanation
+* Complexity
+
+AI should review the SQL query.
+
+---
+
+# 15. System Design Preparation
+
+Create a system design module.
+
+Beginner:
+
+* URL Shortener
+* Rate Limiter
+* Chat Application
+* File Storage
+
+Intermediate:
+
+* Instagram
+* YouTube
+* Uber
+* Netflix
+* WhatsApp
+
+Advanced:
+
+* Distributed queues
+* Notification systems
+* Distributed storage
+* Large-scale event processing
+
+AI should act as a system design interviewer.
+
+---
+
+# 16. Behavioral Interview Preparation
+
+Create a behavioral interview section.
+
+Generate questions based on the target company.
+
+Examples:
+
+* Tell me about yourself.
+* Tell me about a difficult project.
+* Tell me about a conflict.
+* Tell me about a failure.
+* Tell me about a leadership experience.
+
+Allow the user to save answers.
+
+AI should evaluate:
+
+* STAR structure
+* Clarity
+* Impact
+* Specificity
+* Communication
+
+---
+
+# 17. Analytics Dashboard
+
+Create detailed analytics.
+
+Track:
+
+### Overall
+
+Problems solved: 237
+
+Easy: 102
+Medium: 108
+Hard: 27
+
+### Topic Performance
+
+Arrays — 87%
+
+Strings — 81%
+
+Trees — 72%
+
+Graphs — 48%
+
+DP — 41%
+
+### Consistency
+
+Current streak: 12 days
+
+Longest streak: 34 days
+
+### Interview Readiness
+
+DSA: 78%
+
+SQL: 84%
+
+System Design: 51%
+
+CS Fundamentals: 67%
+
+Behavioral: 73%
+
+Overall readiness:
+
+**69%**
+
+Use charts and heatmaps similar to GitHub contribution graphs.
+
+---
+
+# 18. Daily Study Session
+
+Create a focused study mode.
+
+When the user clicks:
+
+**Start Today's Session**
+
+enter a distraction-free interface.
+
+Show:
+
+### Today's Mission
+
+1. Learn concept
+2. Solve Problem 1
+3. Solve Problem 2
+4. Review Problem 3
+5. AI quiz
+6. Complete reflection
+
+At the end:
+
+> How confident are you with today's material?
+
+1–5 rating.
+
+Use this data to modify future scheduling.
+
+---
+
+# 19. Gamification
+
+Keep gamification useful rather than childish.
+
+Track:
+
+* XP
+* Daily streak
+* Weekly goals
+* Problems solved
+* Topics mastered
+* Interview readiness
+
+Achievements:
+
+* First Problem
+* 10 Problems
+* 50 Problems
+* 100 Problems
+* 7 Day Streak
+* 30 Day Streak
+* Graph Master
+* DP Survivor
+* Mock Interview Completed
+
+---
+
+# 20. Search
+
+Create global search.
+
+Users should be able to search:
+
+* Problems
+* Memory cards
+* Topics
+* Notes
+* Companies
+* Interview questions
+
+Example:
+
+Search:
+
+> "hashmap"
+
+Return:
+
+* Problems solved using HashMap
+* Memory cards
+* Related concepts
+* Mistakes
+* AI-generated practice
+
+---
+
+# 21. AI Personalization
+
+The AI should build a profile of the user's learning behavior.
+
+Track:
+
+* Strong topics
+* Weak topics
+* Common mistakes
+* Frequently forgotten problems
+* Average solving time
+* Difficulty tolerance
+* Preferred languages
+* Interview performance
+
+The AI should use this information to personalize future recommendations.
+
+Example:
+
+> You frequently recognize the correct approach but struggle to implement it within 20 minutes. Your next week will include timed implementation exercises.
+
+---
+
+# 22. Database Design
+
+Use PostgreSQL.
+
+Design normalized tables for:
+
+users
+
+problems
+
+problem_attempts
+
+problem_notes
+
+memory_cards
+
+topics
+
+problem_topics
+
+roadmaps
+
+roadmap_days
+
+scheduled_tasks
+
+revision_history
+
+user_topic_performance
+
+companies
+
+company_roles
+
+interview_sessions
+
+interview_questions
+
+interview_answers
+
+job_descriptions
+
+resume_analysis
+
+study_sessions
+
+achievements
+
+user_progress
+
+AI conversations
+
+Use UUID primary keys.
+
+Add appropriate indexes.
+
+Keep AI-generated data separate from core transactional data where appropriate.
+
+---
+
+# 23. AI Architecture
+
+Do NOT tightly couple the application to one AI provider.
+
+Create an abstraction such as:
+
+AIProvider
+
+with support for:
+
+* OpenAI
+* Gemini
+* Anthropic
+* Local Ollama models
+
+The application should be able to switch models through configuration.
+
+Use AI for:
+
+* Roadmap generation
+* Problem recommendations
+* Hints
+* Explanations
+* Code review
+* Interview simulation
+* Resume analysis
+* Job description analysis
+* Performance analysis
+
+Store important AI outputs so they don't need to be regenerated unnecessarily.
+
+---
+
+# 24. Frontend
+
+Use:
+
+* React
+* TypeScript
+* Tailwind CSS
+* Modern component architecture
+
+The UI should feel like a premium developer productivity application.
+
+Design inspiration:
+
+* Linear
+* Notion
+* GitHub
+* Vercel
+* modern developer dashboards
+
+Avoid making it look like a generic admin dashboard.
+
+Use:
+
+* clean typography
+* subtle animations
+* cards
+* command palette
+* keyboard shortcuts
+* responsive layouts
+* dark/light mode
+
+---
+
+# 25. Main Navigation
+
+Sidebar:
+
+Dashboard
+
+Today's Plan
+
+DSA
+
+Memory Cards
+
+Roadmap
+
+AI Tutor
+
+Mock Interview
+
+Companies
+
+SQL
+
+System Design
+
+CS Fundamentals
+
+Behavioral
+
+Resume
+
+Job Analyzer
+
+Analytics
+
+Settings
+
+---
+
+# 26. Important UX Requirement
+
+The user should never feel overwhelmed.
+
+The application should always answer:
+
+### "What should I do right now?"
+
+The dashboard should therefore prominently show the next action.
+
+Example:
+
+> **Your next task**
+>
+> Review: Binary Search — 8 minutes
+>
+> Then solve:
+>
+> Search in Rotated Sorted Array
+>
+> [Start]
+
+---
+
+# 27. Landing Page
+
+Create a polished landing page.
+
+Hero:
+
+## Prepare Smarter. Remember Longer. Interview Better.
+
+Subheading:
+
+> An AI-powered interview preparation platform that remembers what you've learned, identifies your weaknesses, and builds a personalized path to your dream job.
+
+CTA:
+
+**Start Preparing**
+
+Secondary:
+
+**See How It Works**
+
+Sections:
+
+* DSA Memory Cards
+* Personalized 45/60/90 Day Roadmaps
+* AI Tutor
+* Mock Interviews
+* Company Preparation
+* Resume & JD Analysis
+* Progress Analytics
+
+---
+
+# 28. Onboarding
+
+First login should trigger onboarding.
+
+Ask:
+
+1. What role are you targeting?
+2. Which companies are you targeting?
+3. Current experience level?
+4. Current DSA level?
+5. Preferred programming language?
+6. How many hours can you study daily?
+7. How many days do you have?
+8. Which areas are you weak in?
+
+Then generate the initial roadmap.
+
+---
+
+# 29. MVP Priority
+
+Do NOT attempt to build every feature at once.
+
+Build in phases.
+
+### Phase 1 — Core MVP
+
+Implement:
+
+* Authentication
+* Dashboard
+* DSA problem tracker
+* Problem notes
+* Memory cards
+* Spaced repetition
+* 15/30/45/60/90 day roadmap
+* Calendar
+* Progress tracking
+
+### Phase 2 — AI
+
+Implement:
+
+* AI Tutor
+* AI hints
+* AI explanations
+* AI problem recommendations
+* Adaptive roadmap
+
+### Phase 3 — Interview Preparation
+
+Implement:
+
+* Mock interviews
+* Company preparation
+* Behavioral interviews
+* CS fundamentals
+* SQL
+* System design
+
+### Phase 4 — Career Intelligence
+
+Implement:
+
+* Resume analyzer
+* Job description analyzer
+* Skill-gap analysis
+* Company-specific preparation
+
+---
+
+# 30. Development Requirements
+
+Build the application incrementally.
+
+Before writing large amounts of code:
+
+1. Create the architecture.
+2. Define database schema.
+3. Define API contracts.
+4. Define frontend routes.
+5. Define reusable UI components.
+6. Implement authentication.
+7. Implement core DSA functionality.
+8. Implement spaced repetition.
+9. Implement roadmap generation.
+10. Add AI features.
+11. Add interview features.
+
+Use clean architecture and separation of concerns.
+
+Do not put business logic directly inside React components.
+
+Use reusable services for:
+
+* authentication
+* database access
+* AI
+* roadmap generation
+* spaced repetition
+* analytics
+
+Implement proper:
+
+* loading states
+* empty states
+* error handling
+* validation
+* optimistic updates where appropriate
+* pagination
+* search
+* filtering
+
+---
+
+# 31. Critical Product Principle
+
+The application should NOT simply track:
+
+> "You solved 100 problems."
+
+It should understand:
+
+> "You solved 100 problems, but you repeatedly struggle with graph traversal and dynamic programming, forget problems after approximately 10 days, and often identify the correct approach but struggle with implementation."
+
+Then it should act on that information.
+
+The ultimate goal is:
+
+**Track → Remember → Identify Weakness → Practice → Reassess → Adapt → Interview**
+
+Build the product around this feedback loop.
+
+---
+
+# 32. Final Deliverable
+
+Create a fully functional, visually polished web application with:
+
+* responsive design
+* working authentication
+* PostgreSQL database
+* complete DSA tracking
+* memory cards
+* spaced repetition
+* roadmap/calendar
+* AI tutor architecture
+* analytics
+* clean navigation
+* realistic seed data
+* proper error handling
+* production-quality component architecture
+
+Prioritize a functional MVP over implementing every advanced feature immediately.
+
+Every major feature should be designed so that it can be expanded later without rewriting the application architecture.
