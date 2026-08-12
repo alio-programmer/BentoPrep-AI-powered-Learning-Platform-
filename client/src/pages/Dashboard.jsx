@@ -16,10 +16,11 @@ import {
   BarChart3,
   Boxes,
   Sparkles,
+  RotateCcw,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Card, Badge, Loading, Button, EmptyState, cn } from '../components/ui.jsx';
+import { Card, Badge, Loading, Button, EmptyState, Modal, cn } from '../components/ui.jsx';
 
 const TYPE_STYLES = {
   new: { label: 'New Problem', color: 'info' },
@@ -51,14 +52,32 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [restartOpen, setRestartOpen] = useState(false);
+  const [restarting, setRestarting] = useState(false);
 
-  useEffect(() => {
+  const load = () =>
     api
       .get('/dashboard')
       .then(({ data }) => setData(data))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+      .catch(() => setData(null));
+
+  useEffect(() => {
+    setLoading(true);
+    load().finally(() => setLoading(false));
   }, []);
+
+  const handleRestart = async () => {
+    setRestarting(true);
+    try {
+      await api.post('/roadmap/restart?track=dsa');
+      await load();
+      setRestartOpen(false);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to restart roadmap.');
+    } finally {
+      setRestarting(false);
+    }
+  };
 
   if (loading) return <Loading label="Loading your prep workspace…" />;
   if (!data) return <EmptyState title="Couldn't load dashboard" subtitle="Make sure the server is running." />;
@@ -126,6 +145,19 @@ export default function Dashboard() {
               className="h-full rounded-full bg-accent transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <span className="font-mono text-[11px] text-muted">
+              Day {Math.min(dayNumber || 1, totalDays)} of {totalDays}
+            </span>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setRestartOpen(true)}
+              className="h-7 px-2.5 text-[11px]"
+            >
+              <RotateCcw className="size-3.5" /> Restart roadmap
+            </Button>
           </div>
         </Card>
       )}
@@ -484,6 +516,22 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+
+      <Modal open={restartOpen} onClose={() => setRestartOpen(false)} title="Restart your DSA roadmap?" width="max-w-sm">
+        <p className="text-sm leading-relaxed text-muted">
+          This resets all day progress to <span className="font-semibold text-ink">pending</span> and
+          re-baselines the calendar so <span className="font-semibold text-ink">Day 1 starts today</span>.
+          Your problems, memory cards and study history are not affected.
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setRestartOpen(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleRestart} disabled={restarting}>
+            {restarting ? 'Restarting…' : 'Restart roadmap'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

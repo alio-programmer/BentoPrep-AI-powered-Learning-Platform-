@@ -164,6 +164,54 @@ router.post('/', requireAuth, async (req, res) => {
   return res.status(201).json({ roadmap, days: dayRows });
 });
 
+// POST /api/roadmap/restart?track=dsa|sql|resume — reset progress and restart from today
+router.post('/restart', requireAuth, async (req, res) => {
+  const track = VALID_TRACKS.includes(req.query.track) ? req.query.track : 'dsa';
+
+  const { data: roadmap, error } = await supabase
+    .from('roadmaps')
+    .select('*')
+    .eq('user_id', req.user.id)
+    .eq('track', track)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) return res.status(500).json({ error: error.message });
+  if (!roadmap) return res.status(404).json({ error: 'No active roadmap to restart.' });
+
+  const { data: days, error: dayError } = await supabase
+    .from('roadmap_days')
+    .select('id, day_number')
+    .eq('roadmap_id', roadmap.id)
+    .eq('user_id', req.user.id);
+  if (dayError) return res.status(500).json({ error: dayError.message });
+
+  const now = new Date();
+  const rows = (days || []).map((d) => ({
+    id: d.id,
+    status: 'pending',
+    date: dayDate(now.toISOString(), d.day_number),
+  }));
+
+  if (rows.length) {
+    const { error: resetErr } = await supabase.from('roadmap_days').upsert(rows);
+    if (resetErr) return res.status(500).json({ error: resetErr.message });
+  }
+
+  await supabase.from('roadmaps').update({ created_at: now.toISOString() }).eq('id', roadmap.id);
+
+  const { data: updatedDays, error: fetchErr } = await supabase
+    .from('roadmap_days')
+    .select('*')
+    .eq('roadmap_id', roadmap.id)
+    .eq('user_id', req.user.id)
+    .order('day_number', { ascending: true });
+  if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+
+  return res.json({ roadmap: { ...roadmap, created_at: now.toISOString() }, days: updatedDays || [] });
+});
+
 // PUT /api/roadmap/days/:id — toggle completion
 router.put('/days/:id', requireAuth, async (req, res) => {
   const schema = z.object({ status: z.enum(['pending', 'done', 'skipped']) });
