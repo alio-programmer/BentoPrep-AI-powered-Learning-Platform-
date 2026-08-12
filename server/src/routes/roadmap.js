@@ -188,15 +188,13 @@ router.post('/restart', requireAuth, async (req, res) => {
   if (dayError) return res.status(500).json({ error: dayError.message });
 
   const now = new Date();
-  const rows = (days || []).map((d) => ({
-    id: d.id,
-    status: 'pending',
-    date: dayDate(now.toISOString(), d.day_number),
-  }));
-
-  if (rows.length) {
-    const { error: resetErr } = await supabase.from('roadmap_days').upsert(rows);
-    if (resetErr) return res.status(500).json({ error: resetErr.message });
+  for (const d of days || []) {
+    const { error: updateErr } = await supabase
+      .from('roadmap_days')
+      .update({ status: 'pending', date: dayDate(now.toISOString(), d.day_number) })
+      .eq('id', d.id)
+      .eq('user_id', req.user.id);
+    if (updateErr) return res.status(500).json({ error: updateErr.message });
   }
 
   await supabase.from('roadmaps').update({ created_at: now.toISOString() }).eq('id', roadmap.id);
