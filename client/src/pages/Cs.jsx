@@ -222,7 +222,7 @@ export default function Cs() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-        <Card className="h-fit p-3">
+        <Card className="h-[560px] overflow-y-auto p-3">
           {mode === 'learn' ? (
             <div className="space-y-4">
               {(curriculum[subject] || []).map((group) => (
