@@ -14,6 +14,7 @@ import MemoryCards from './pages/MemoryCards.jsx';
 import Roadmap from './pages/Roadmap.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Design from './pages/Design.jsx';
+import Cs from './pages/Cs.jsx';
 import Sql from './pages/Sql.jsx';
 import SqlForm from './pages/SqlForm.jsx';
 import Tutor from './pages/Tutor.jsx';
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="/roadmap" element={<Roadmap />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/design" element={<Design />} />
+        <Route path="/cs" element={<Cs />} />
         <Route path="/sql" element={<Sql />} />
         <Route path="/sql/new" element={<SqlForm />} />
         <Route path="/sql/:id" element={<SqlForm />} />

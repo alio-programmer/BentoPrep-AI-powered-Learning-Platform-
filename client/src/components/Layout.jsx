@@ -15,6 +15,7 @@ import {
   Sparkles,
   Boxes,
   Database,
+  Cpu,
   FileText,
   ListChecks,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ const NAV = [
   { to: '/quiz', label: 'Daily Quiz', icon: ListChecks },
   { to: '/design', label: 'System Design', icon: Boxes },
   { to: '/sql', label: 'SQL', icon: Database },
+  { to: '/cs', label: 'CS Fundamentals', icon: Cpu },
   { to: '/resumes', label: 'Resume', icon: FileText },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/settings', label: 'Settings', icon: Settings },
