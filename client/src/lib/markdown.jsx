@@ -1,6 +1,6 @@
 import { Highlight, themes } from 'prism-react-renderer';
 import { useTheme } from '../context/ThemeContext.jsx';
-import Mermaid from '../components/Mermaid.jsx';
+import Mermaid, { isMermaidLang } from '../components/Mermaid.jsx';
 
 export function inline(text, key) {
   // Render **bold**, *italic*, and `code` inline styles.
@@ -64,7 +64,7 @@ export function fmt(text) {
     if (codeBuf.length) {
       const src = codeBuf.join('\n');
       out.push(
-        codeLang === 'mermaid'
+        isMermaidLang(codeLang)
           ? <Mermaid key={key} code={src} />
           : <CodeBlock key={key} code={src} language={codeLang} />
       );

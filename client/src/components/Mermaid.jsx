@@ -1,17 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTheme } from '../context/ThemeContext.jsx';
 
 let renderCounter = 0;
 
+const MERMAID_LANGS = new Set(['mermaid', 'mmd', 'flowchart', 'graph']);
+
+export function isMermaidLang(lang) {
+  return MERMAID_LANGS.has(String(lang || '').toLowerCase());
+}
+
 export default function Mermaid({ code }) {
   const { dark } = useTheme();
-  const idRef = useRef(`mermaid-${++renderCounter}`);
   const [svg, setSvg] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     let alive = true;
-    let renderedId = idRef.current;
+    const renderId = `mermaid-${Date.now()}-${++renderCounter}`;
     (async () => {
       try {
         const mermaid = (await import('mermaid')).default;
@@ -33,7 +38,7 @@ export default function Mermaid({ code }) {
               }
             : undefined,
         });
-        const result = await mermaid.render(renderedId, code);
+        const result = await mermaid.render(renderId, code);
         if (alive) setSvg(result.svg);
       } catch (e) {
         if (alive) setError(e?.message || 'Failed to render diagram');
