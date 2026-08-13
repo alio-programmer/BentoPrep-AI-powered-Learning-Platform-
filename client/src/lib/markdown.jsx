@@ -1,6 +1,6 @@
 import { Highlight, themes } from 'prism-react-renderer';
 import { useTheme } from '../context/ThemeContext.jsx';
-import Mermaid, { isMermaidLang, isMermaidStart, isMermaidContent } from '../components/Mermaid.jsx';
+import Mermaid, { isMermaidLang } from '../components/Mermaid.jsx';
 
 export function inline(text, key) {
   // Render **bold**, *italic*, and `code` inline styles.
@@ -54,10 +54,10 @@ export function CodeBlock({ code, language }) {
 
 export function fmt(text) {
   // Minimal markdown rendering: headings, lists, code blocks, inline styles.
+  // Diagrams render as Mermaid only inside explicit ```mermaid code fences.
   const lines = text.split('\n');
   const out = [];
   let inCode = false;
-  let inMermaid = false;
   let codeBuf = [];
   let codeLang = '';
 
@@ -88,20 +88,6 @@ export function fmt(text) {
       return;
     }
     if (inCode) {
-      codeBuf.push(line);
-      return;
-    }
-    if (inMermaid) {
-      if (isMermaidContent(line)) {
-        codeBuf.push(line);
-        return;
-      }
-      flushCode(`mmd-${i}`);
-      inMermaid = false;
-    }
-    if (isMermaidStart(t)) {
-      inMermaid = true;
-      codeLang = 'mermaid';
       codeBuf.push(line);
       return;
     }

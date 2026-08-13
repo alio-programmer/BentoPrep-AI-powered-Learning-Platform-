@@ -86,9 +86,9 @@ router.post('/', requireAuth, async (req, res) => {
     if (!settingsRow?.ai_api_key) {
       return res.status(400).json({ error: 'No AI API key configured. Add your key in Settings → AI Provider.' });
     }
-    const settings = resolveSettings(settingsRow);
 
     try {
+      const settings = resolveSettings(settingsRow);
       generated = await generateResumeRoadmap({
         resume,
         settings,
@@ -110,8 +110,8 @@ router.post('/', requireAuth, async (req, res) => {
     if (!settingsRow?.ai_api_key) {
       return res.status(400).json({ error: 'No AI API key configured. Add your key in Settings → AI Provider.' });
     }
-    const settings = resolveSettings(settingsRow);
     try {
+      const settings = resolveSettings(settingsRow);
       generated = await generateCustomRoadmap({
         topic: parsed.data.custom_topic,
         level: parsed.data.level || 'Beginner',
@@ -131,8 +131,8 @@ router.post('/', requireAuth, async (req, res) => {
     if (!settingsRow?.ai_api_key) {
       return res.status(400).json({ error: 'No AI API key configured. Add your key in Settings → AI Provider.' });
     }
-    const settings = resolveSettings(settingsRow);
     try {
+      const settings = resolveSettings(settingsRow);
       generated = await generateAiRoadmap({
         track: parsed.data.track,
         level: parsed.data.level || 'Intermediate',

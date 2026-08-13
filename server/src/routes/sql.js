@@ -134,10 +134,10 @@ router.post('/:id/review', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'No AI API key configured. Add your key in Settings → AI Provider.' });
   }
 
-  const settings = resolveSettings(settingsRow);
   const userMessage = `Problem: ${problem.name}\nTopic: ${problem.topic || '—'}\nDifficulty: ${problem.difficulty || '—'}\n\nMy approach:\n${problem.approach || '(not provided)'}\n\nMy SQL query:\n${problem.query || '(not provided)'}`;
 
   try {
+    const settings = resolveSettings(settingsRow);
     const reply = await chatCompletion({
       baseUrl: settings.baseUrl || settings.ai_base_url,
       apiKey: settings.apiKey || settings.ai_api_key,

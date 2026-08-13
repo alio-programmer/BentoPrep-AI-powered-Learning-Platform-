@@ -64,6 +64,15 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
+// Safety net so a rejected async route never hangs a request or crashes the
+// process silently. Routes should still catch their own errors for a proper 502.
+process.on('unhandledRejection', (reason) => {
+  console.error('[server] unhandledRejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[server] uncaughtException:', err);
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`BentoPrep server running on http://localhost:${PORT}`);
 });

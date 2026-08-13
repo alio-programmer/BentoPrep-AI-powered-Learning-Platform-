@@ -14,7 +14,7 @@ import {
   Power,
   Star,
 } from 'lucide-react';
-import api from '../api/client.js';
+import api, { errorMessage } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Button, Card, Input, Select, PageHeader, Badge, Modal, cn } from '../components/ui.jsx';
 
@@ -81,7 +81,7 @@ export default function Settings() {
       const { data } = await api.post('/settings/ai/test');
       setTestResult({ ok: true, reply: data.reply });
     } catch (err) {
-      setTestResult({ ok: false, error: err.response?.data?.error || 'Test failed' });
+      setTestResult({ ok: false, error: errorMessage(err, 'Test failed') });
     } finally {
       setTesting(false);
     }
@@ -125,7 +125,7 @@ export default function Settings() {
       setAddOpen(false);
       loadCredentials();
     } catch (err) {
-      setAddError(err.response?.data?.error || 'Failed to save credential.');
+      setAddError(errorMessage(err, 'Failed to save credential.'));
     } finally {
       setAdding(false);
     }

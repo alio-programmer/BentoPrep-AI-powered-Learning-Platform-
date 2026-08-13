@@ -243,9 +243,8 @@ router.post('/chat', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'No AI API key configured. Add your key in Settings → AI Provider.' });
   }
 
-  const settings = resolveSettings(data);
-
   try {
+    const settings = resolveSettings(data);
     const reply = await chatCompletion({
       baseUrl: settings.baseUrl || settings.ai_base_url,
       apiKey: settings.apiKey || settings.ai_api_key,

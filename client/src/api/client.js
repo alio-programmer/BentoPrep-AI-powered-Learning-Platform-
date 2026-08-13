@@ -23,4 +23,14 @@ api.interceptors.response.use(
   }
 );
 
+// Return a readable error string from an axios error. Never yields an object,
+// so UI can safely show the result (e.g. "Failed to generate roadmap.").
+export function errorMessage(err, fallback = 'Something went wrong.') {
+  const data = err?.response?.data;
+  const raw = data && typeof data === 'object' ? data.error : data;
+  if (typeof raw === 'string' && raw.trim()) return raw;
+  if (err?.message && err.message !== 'Network Error') return err.message;
+  return fallback;
+}
+
 export default api;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CalendarRange, Check, Plus, RefreshCw, Code2, Database, FileText, ChevronDown, BookOpen, ListChecks, Target, Users, Sparkles } from 'lucide-react';
-import api from '../api/client.js';
+import api, { errorMessage } from '../api/client.js';
 import {
   Button, Card, Loading, EmptyState, Modal, Select, Input, Badge, PageHeader, cn,
 } from '../components/ui.jsx';
@@ -81,7 +81,7 @@ export default function Roadmap() {
       await fetchData(track);
       setOpen(false);
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to generate roadmap.');
+      alert(errorMessage(err, 'Failed to generate roadmap.'));
     } finally {
       setGenerating(false);
     }

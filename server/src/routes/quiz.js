@@ -50,7 +50,6 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'No AI API key configured. Add your key in Settings → AI Provider.' });
   }
 
-  const settings = resolveSettings(settingsRow);
   const topicLabel = parsed.data.topic || 'a mix of key topics';
   const trackLabel = TRACKS[parsed.data.track].label;
 
@@ -68,6 +67,7 @@ Return ONLY valid JSON (no markdown, no commentary):
 { "questions": [ { "question": "...", "options": ["A...", "B...", "C...", "D..."], "answer": 0, "explanation": "...", "difficulty": "Easy|Medium|Hard" } ] }`;
 
   try {
+    const settings = resolveSettings(settingsRow);
     const reply = await chatCompletion({
       baseUrl: settings.baseUrl || settings.ai_base_url,
       apiKey: settings.apiKey || settings.ai_api_key,

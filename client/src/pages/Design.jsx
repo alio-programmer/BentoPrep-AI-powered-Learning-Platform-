@@ -4,7 +4,7 @@ import { Highlight, themes } from 'prism-react-renderer';
 import api from '../api/client.js';
 import { Button, Card, Loading, PageHeader, Badge, Spinner, cn } from '../components/ui.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
-import Mermaid, { isMermaidLang, isMermaidStart, isMermaidContent } from '../components/Mermaid.jsx';
+import Mermaid, { isMermaidLang } from '../components/Mermaid.jsx';
 import { useChatPersistence } from '../lib/useChatPersistence.js';
 import { SavedChats } from '../components/SavedChats.jsx';
 
@@ -90,10 +90,10 @@ function CodeBlock({ code, language }) {
 
 function fmtBlock(text) {
   // Minimal markdown rendering: headings, lists, code blocks, inline styles.
+  // Diagrams render as Mermaid only inside explicit ```mermaid code fences.
   const lines = text.split('\n');
   const out = [];
   let inCode = false;
-  let inMermaid = false;
   let codeBuf = [];
   let codeLang = '';
 
@@ -124,20 +124,6 @@ function fmtBlock(text) {
       return;
     }
     if (inCode) {
-      codeBuf.push(line);
-      return;
-    }
-    if (inMermaid) {
-      if (isMermaidContent(line)) {
-        codeBuf.push(line);
-        return;
-      }
-      flushCode(`mmd-${i}`);
-      inMermaid = false;
-    }
-    if (isMermaidStart(t)) {
-      inMermaid = true;
-      codeLang = 'mermaid';
       codeBuf.push(line);
       return;
     }
