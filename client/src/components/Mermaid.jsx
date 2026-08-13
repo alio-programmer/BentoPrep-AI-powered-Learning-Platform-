@@ -9,6 +9,27 @@ export function isMermaidLang(lang) {
   return MERMAID_LANGS.has(String(lang || '').toLowerCase());
 }
 
+const MERMAID_DIRECTION = /^(?:flowchart|graph)\s+(?:TB|TD|BT|LR|RL)\b/i;
+
+const MERMAID_TYPE = /^(?:sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|journey|pie|gitGraph|mindmap|timeline|requirementDiagram|quadrantChart|xychart|block-beta|packet-beta|C4Context|C4Container|C4Component|C4Deployment|C4System|architecture-beta)\b/i;
+
+const MERMAID_STRUCT = /^(?:subgraph|end|participant|actor|activate|deactivate|note|alt|else|opt|loop|par|rect|classDef|style|linkStyle|direction|autonumber)\b/i;
+
+const MERMAID_ARROW = /(-->|--->|<--|->|\.->|\.\.\.|==>|=>|:::|~~~|--\||\|--|-\-o|\|\|--o{)/;
+
+export function isMermaidStart(line) {
+  const t = String(line || '').trim();
+  return MERMAID_DIRECTION.test(t) || MERMAID_TYPE.test(t);
+}
+
+export function isMermaidContent(line) {
+  const t = String(line || '').trim();
+  if (t === '') return true;
+  if (/^%%/.test(t)) return true;
+  if (MERMAID_STRUCT.test(t)) return true;
+  return MERMAID_ARROW.test(t);
+}
+
 export default function Mermaid({ code }) {
   const { dark } = useTheme();
   const [svg, setSvg] = useState('');

@@ -1,7 +1,7 @@
 import { Highlight, themes } from 'prism-react-renderer';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { cn } from './ui.jsx';
-import Mermaid, { isMermaidLang } from './Mermaid.jsx';
+import Mermaid, { isMermaidLang, isMermaidStart, isMermaidContent } from './Mermaid.jsx';
 
 export function inline(text, key) {
   // Render **bold**, *italic*, `code`, and _underline-ish_ inline styles.
@@ -57,6 +57,7 @@ export function Markdown({ text }) {
   const lines = text.split('\n');
   const out = [];
   let inCode = false;
+  let inMermaid = false;
   let codeBuf = [];
   let codeLang = '';
 
@@ -87,6 +88,20 @@ export function Markdown({ text }) {
       return;
     }
     if (inCode) {
+      codeBuf.push(line);
+      return;
+    }
+    if (inMermaid) {
+      if (isMermaidContent(line)) {
+        codeBuf.push(line);
+        return;
+      }
+      flushCode(`mmd-${i}`);
+      inMermaid = false;
+    }
+    if (isMermaidStart(t)) {
+      inMermaid = true;
+      codeLang = 'mermaid';
       codeBuf.push(line);
       return;
     }
