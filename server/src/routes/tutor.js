@@ -70,6 +70,7 @@ function buildSystemPrompt(mode, context) {
   const parts = [base];
   if (context) parts.push(`\nRelevant context from the student's BentoPrep data:\n${context}`);
   parts.push(`\nFormat guidance: use markdown headings, short bullets, and fenced code blocks for code/diagrams.`);
+  parts.push(`\nUse Mermaid diagrams wherever they help explain a concept: wrap them in a fenced block with the "mermaid" language tag (e.g. flowcharts, sequence diagrams, state diagrams, class diagrams, trees, graphs). Prefer a diagram over a long textual description.`);
   return parts.join('\n');
 }
 

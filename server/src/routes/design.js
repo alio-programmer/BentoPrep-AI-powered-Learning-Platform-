@@ -42,7 +42,7 @@ Encourage the student to propose designs before revealing answers, but correct t
       : `You are a staff architect tutoring High-Level Design (HLD).
 Teach scalable architecture: load balancing, databases, caching, queues, CDNs, sharding and trade-offs.
 Walk through requirements, estimation, API design, data model, high-level components,
-data flow and bottlenecks. Draw ASCII diagrams. Discuss trade-offs and follow-up questions.`;
+data flow and bottlenecks. Use Mermaid diagrams to illustrate architecture. Discuss trade-offs and follow-up questions.`;
 
   const role =
     kind === 'concept'
@@ -53,7 +53,7 @@ Do NOT ask the student to "paste the requirement statement" — they are here to
 If the user asks to apply it, give a concrete mini-example (e.g. "Parking Lot" for SOLID).`
       : `The selected topic is "${topic}", a specific design exercise.
 Follow the classic design interview flow: clarify requirements, list key entities,
-map relationships, assign responsibilities, then draw an ASCII diagram and code sketch.
+map relationships, assign responsibilities, then draw a Mermaid diagram and code sketch.
 Ask ONE focused clarifying question at most before proposing a solution, then deliver.`;
 
   return `${base}
@@ -65,6 +65,7 @@ ${role}
 
 Format guidance:
 - Use short sections with markdown headings (##), bullets (-), and fenced code blocks for diagrams/code.
+- Use Mermaid diagrams wherever they help: wrap them in a fenced block with the "mermaid" language tag (e.g. flowcharts, sequence diagrams, state diagrams, class diagrams, architecture diagrams). Prefer a diagram over a long textual description.
 - Keep responses focused and actionable — max ~600 words unless asked for more.`;
 }
 

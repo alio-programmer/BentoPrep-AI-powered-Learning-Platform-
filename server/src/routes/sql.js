@@ -30,7 +30,8 @@ Give a structured, concise review with these sections:
 3. Best practices — naming, readability, SQL style.
 4. Edge cases — NULLs, duplicates, empty tables, ties.
 5. Score (0-10) and how to improve.
-Be specific. Quote the exact SQL when pointing things out.`;
+Be specific. Quote the exact SQL when pointing things out.
+Use a Mermaid diagram (fenced block with the "mermaid" language tag) when it helps illustrate the query flow, joins, or a better query plan.`;
 
 // GET /api/sql — list with filters
 router.get('/', requireAuth, async (req, res) => {

@@ -199,6 +199,7 @@ ${role}
 
 Format guidance:
 - Use short sections with markdown headings (##), bullets (-), and fenced code blocks for code/diagrams.
+- Use Mermaid diagrams wherever they help explain a concept: wrap them in a fenced block with the "mermaid" language tag (e.g. flowcharts, sequence diagrams, state diagrams, class diagrams, trees, graphs). Prefer a diagram over a long textual description.
 - Keep responses focused and actionable — max ~600 words unless asked for more.`;
 }
 

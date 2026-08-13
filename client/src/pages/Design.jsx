@@ -4,6 +4,7 @@ import { Highlight, themes } from 'prism-react-renderer';
 import api from '../api/client.js';
 import { Button, Card, Loading, PageHeader, Badge, Spinner, cn } from '../components/ui.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import Mermaid from '../components/Mermaid.jsx';
 
 const QUICK_PROMPTS = {
   lld: {
@@ -95,7 +96,12 @@ function fmtBlock(text) {
 
   const flushCode = (key) => {
     if (codeBuf.length) {
-      out.push(<CodeBlock key={key} code={codeBuf.join('\n')} language={codeLang} />);
+      const src = codeBuf.join('\n');
+      out.push(
+        codeLang === 'mermaid'
+          ? <Mermaid key={key} code={src} />
+          : <CodeBlock key={key} code={src} language={codeLang} />
+      );
       codeBuf = [];
       codeLang = '';
     }
