@@ -15,6 +15,7 @@ import sqlRoutes from './routes/sql.js';
 import tutorRoutes from './routes/tutor.js';
 import resumeRoutes from './routes/resumes.js';
 import quizRoutes from './routes/quiz.js';
+import chatRoutes from './routes/chats.js';
 import { isConfigured } from './config/supabase.js';
 
 dotenv.config();
@@ -47,6 +48,7 @@ app.use('/api/sql', sqlRoutes);
 app.use('/api/tutor', tutorRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/quiz', quizRoutes);
+app.use('/api/chats', chatRoutes);
 
 // 404 + error handler
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));

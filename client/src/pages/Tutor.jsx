@@ -3,6 +3,8 @@ import { Send, Square, Sparkles, BookOpen, RefreshCw, FileText, CreditCard } fro
 import api from '../api/client.js';
 import { Button, Card, Loading, PageHeader, Badge, Spinner, Select, cn } from '../components/ui.jsx';
 import { fmt } from '../lib/markdown.jsx';
+import { useChatPersistence } from '../lib/useChatPersistence.js';
+import { SavedChats } from '../components/SavedChats.jsx';
 
 const MODE_COLORS = {
   hint: 'ok',
@@ -43,6 +45,15 @@ export default function Tutor() {
   const [error, setError] = useState('');
   const bottomRef = useRef(null);
   const abortRef = useRef(null);
+  const chat = useChatPersistence('tutor');
+
+  const topicKey =
+    contextType && contextId ? `${mode}:${contextType}:${contextId}` : mode;
+
+  const loadChat = async (key) => {
+    const msgs = await chat.loadThread(key);
+    if (msgs) setMessages(msgs);
+  };
 
   useEffect(() => {
     (async () => {
@@ -58,6 +69,8 @@ export default function Tutor() {
         setCards(c.data.cards || []);
       } finally {
         setLoading(false);
+        const msgs = await chat.loadThread('hint');
+        if (msgs) setMessages(msgs);
       }
     })();
   }, []);
@@ -68,6 +81,45 @@ export default function Tutor() {
 
   const switchMode = (m) => {
     setMode(m);
+    setContextType('');
+    setContextId('');
+    setMessages([]);
+    setError('');
+    loadChat(m);
+  };
+
+  const changeContextType = (v) => {
+    setContextType(v);
+    setContextId('');
+    setMessages([]);
+    setError('');
+    loadChat(mode);
+  };
+
+  const changeContextId = (v) => {
+    setContextId(v);
+    setMessages([]);
+    setError('');
+    loadChat(v ? `${mode}:${contextType}:${v}` : mode);
+  };
+
+  const selectSaved = async (key) => {
+    const [m, ctype, cid] = key.split(':');
+    setMode(m || mode);
+    setContextType(ctype === 'problem' || ctype === 'card' ? ctype : '');
+    setContextId(ctype === 'problem' || ctype === 'card' ? cid || '' : '');
+    setMessages([]);
+    setError('');
+    loadChat(key);
+  };
+
+  const newChat = () => {
+    setMessages([]);
+    setError('');
+  };
+
+  const deleteChat = async (key) => {
+    await chat.deleteThread(key);
     setMessages([]);
     setError('');
   };
@@ -94,7 +146,9 @@ export default function Tutor() {
         },
         { signal: controller.signal }
       );
-      setMessages((m) => [...m, { role: 'assistant', content: data.reply }]);
+      const final = [...next, { role: 'assistant', content: data.reply }];
+      setMessages(final);
+      chat.saveThread({ topicKey, label: modes[mode]?.label || mode, messages: final });
     } catch (err) {
       if (err.code !== 'ERR_CANCELED') {
         setError(err.response?.data?.error || 'AI request failed.');
@@ -148,13 +202,13 @@ export default function Tutor() {
       </div>
 
       <Card className="mb-4 flex flex-wrap items-center gap-3 p-3">
-        <Select value={contextType} onChange={(e) => { setContextType(e.target.value); setContextId(''); }} className="w-40">
+        <Select value={contextType} onChange={(e) => changeContextType(e.target.value)} className="w-40">
           <option value="">No context</option>
           <option value="problem">DSA problem</option>
           <option value="card">Memory card</option>
         </Select>
         {contextType === 'problem' && (
-          <Select value={contextId} onChange={(e) => setContextId(e.target.value)} className="min-w-[240px] flex-1">
+          <Select value={contextId} onChange={(e) => changeContextId(e.target.value)} className="min-w-[240px] flex-1">
             {problems.length === 0 ? (
               <option value="">No problems yet — add one in DSA Problems</option>
             ) : (
@@ -168,7 +222,7 @@ export default function Tutor() {
           </Select>
         )}
         {contextType === 'card' && (
-          <Select value={contextId} onChange={(e) => setContextId(e.target.value)} className="min-w-[240px] flex-1">
+          <Select value={contextId} onChange={(e) => changeContextId(e.target.value)} className="min-w-[240px] flex-1">
             {cards.length === 0 ? (
               <option value="">No cards yet — add a DSA problem first</option>
             ) : (
@@ -186,12 +240,22 @@ export default function Tutor() {
       </Card>
 
       <Card className="flex h-[520px] flex-col overflow-hidden p-0">
-        <div className="flex items-center gap-2 border-b border-line px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
           <Sparkles className="size-4 text-accent" />
           <p className="text-sm font-semibold">
             {modes[mode]?.label || 'AI Tutor'}
             {modes[mode]?.blurb && <Badge className="ml-2" color={MODE_COLORS[mode] || 'accent'}>{modes[mode].blurb}</Badge>}
           </p>
+          <div className="ml-auto">
+            <SavedChats
+              sessions={chat.sessions}
+              currentKey={topicKey}
+              onSelect={selectSaved}
+              onNew={newChat}
+              onDelete={deleteChat}
+              disabled={busy}
+            />
+          </div>
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">

@@ -3,6 +3,8 @@ import { Database, Network, Cpu, Send, Square, Sparkles, RefreshCw, GraduationCa
 import api from '../api/client.js';
 import { Button, Card, Loading, PageHeader, Badge, Spinner, cn } from '../components/ui.jsx';
 import { Message } from '../components/Markdown.jsx';
+import { useChatPersistence } from '../lib/useChatPersistence.js';
+import { SavedChats } from '../components/SavedChats.jsx';
 
 const SUBJECTS = {
   dbms: { label: 'Database Management Systems', short: 'DBMS', icon: Database, blurb: 'SQL, normalization, indexing, transactions' },
@@ -69,6 +71,14 @@ export default function Cs() {
   const [error, setError] = useState('');
   const bottomRef = useRef(null);
   const abortRef = useRef(null);
+  const chat = useChatPersistence('cs');
+
+  const topicKey = `${subject}:${selected || ''}`;
+
+  const loadChat = async (key) => {
+    const msgs = await chat.loadThread(key);
+    if (msgs) setMessages(msgs);
+  };
 
   useEffect(() => {
     (async () => {
@@ -84,6 +94,9 @@ export default function Cs() {
         setHasKey(s.data.hasKey);
       } finally {
         setLoading(false);
+        const first = c.dbms?.[0]?.concepts?.[0] || t.dbms?.[0]?.name || '';
+        const msgs = await chat.loadThread(`dbms:${first}`);
+        if (msgs) setMessages(msgs);
       }
     })();
   }, []);
@@ -98,12 +111,14 @@ export default function Cs() {
     setError('');
     const first = curriculum[s]?.[0]?.concepts?.[0] || topics[s]?.[0]?.name || null;
     setSelected(first);
+    loadChat(`${s}:${first || ''}`);
   };
 
   const chooseTopic = (name) => {
     setSelected(name);
     setMessages([]);
     setError('');
+    loadChat(`${subject}:${name}`);
     if (mode === 'practice' && name === 'Your Own Topic') {
       setInput('Help me explore this topic: ');
     }
@@ -118,6 +133,28 @@ export default function Cs() {
         ? curriculum[subject]?.[0]?.concepts?.[0]
         : topics[subject]?.[0]?.name;
     setSelected(first || null);
+    loadChat(`${subject}:${first || ''}`);
+  };
+
+  const selectSaved = async (key) => {
+    const [subj, ...rest] = key.split(':');
+    const name = rest.join(':');
+    setSubject(subj || subject);
+    setSelected(name || null);
+    setMessages([]);
+    setError('');
+    loadChat(key);
+  };
+
+  const newChat = () => {
+    setMessages([]);
+    setError('');
+  };
+
+  const deleteChat = async (key) => {
+    await chat.deleteThread(key);
+    setMessages([]);
+    setError('');
   };
 
   const send = async (text) => {
@@ -137,7 +174,13 @@ export default function Cs() {
         message: content.trim(),
         history: messages.slice(-10),
       }, { signal: controller.signal });
-      setMessages((m) => [...m, { role: 'assistant', content: data.reply }]);
+      const final = [...next, { role: 'assistant', content: data.reply }];
+      setMessages(final);
+      chat.saveThread({
+        topicKey,
+        label: `${subjectMeta.short} — ${selected || 'General'}`,
+        messages: final,
+      });
     } catch (err) {
       if (err.code !== 'ERR_CANCELED') {
         setError(err.response?.data?.error || 'AI request failed.');
@@ -274,6 +317,16 @@ export default function Cs() {
               {selected || 'Select a topic'}
               {selected && <Badge className="ml-2" color="accent">{subjectMeta.short}</Badge>}
             </p>
+            <div className="ml-auto">
+              <SavedChats
+                sessions={chat.sessions}
+                currentKey={topicKey}
+                onSelect={selectSaved}
+                onNew={newChat}
+                onDelete={deleteChat}
+                disabled={busy}
+              />
+            </div>
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto p-4">

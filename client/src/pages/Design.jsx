@@ -5,6 +5,8 @@ import api from '../api/client.js';
 import { Button, Card, Loading, PageHeader, Badge, Spinner, cn } from '../components/ui.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import Mermaid, { isMermaidLang, isMermaidStart, isMermaidContent } from '../components/Mermaid.jsx';
+import { useChatPersistence } from '../lib/useChatPersistence.js';
+import { SavedChats } from '../components/SavedChats.jsx';
 
 const QUICK_PROMPTS = {
   lld: {
@@ -202,6 +204,14 @@ export default function Design() {
   const [error, setError] = useState('');
   const bottomRef = useRef(null);
   const abortRef = useRef(null);
+  const chat = useChatPersistence('design');
+
+  const topicKey = `${track}:${selected || ''}`;
+
+  const loadChat = async (key) => {
+    const msgs = await chat.loadThread(key);
+    if (msgs) setMessages(msgs);
+  };
 
   useEffect(() => {
     (async () => {
@@ -217,6 +227,9 @@ export default function Design() {
         setHasKey(s.data.hasKey);
       } finally {
         setLoading(false);
+        const first = c.lld?.[0]?.concepts?.[0] || t.lld?.[0]?.name || '';
+        const msgs = await chat.loadThread(`lld:${first}`);
+        if (msgs) setMessages(msgs);
       }
     })();
   }, []);
@@ -231,12 +244,14 @@ export default function Design() {
     setError('');
     const first = curriculum[t]?.[0]?.concepts?.[0] || topics[t]?.[0]?.name || null;
     setSelected(first);
+    loadChat(`${t}:${first || ''}`);
   };
 
   const chooseTopic = (name) => {
     setSelected(name);
     setMessages([]);
     setError('');
+    loadChat(`${track}:${name}`);
     if (mode === 'practice' && (name === 'Your Own Problem' || name === 'Your Own Design')) {
       setInput('Help me practice this design problem: ');
     }
@@ -251,6 +266,28 @@ export default function Design() {
         ? curriculum[track]?.[0]?.concepts?.[0]
         : topics[track]?.[0]?.name;
     setSelected(first || null);
+    loadChat(`${track}:${first || ''}`);
+  };
+
+  const selectSaved = async (key) => {
+    const [tr, ...rest] = key.split(':');
+    const name = rest.join(':');
+    setTrack(tr || track);
+    setSelected(name || null);
+    setMessages([]);
+    setError('');
+    loadChat(key);
+  };
+
+  const newChat = () => {
+    setMessages([]);
+    setError('');
+  };
+
+  const deleteChat = async (key) => {
+    await chat.deleteThread(key);
+    setMessages([]);
+    setError('');
   };
 
   const send = async (text) => {
@@ -270,7 +307,13 @@ export default function Design() {
         message: content.trim(),
         history: messages.slice(-10),
       }, { signal: controller.signal });
-      setMessages((m) => [...m, { role: 'assistant', content: data.reply }]);
+      const final = [...next, { role: 'assistant', content: data.reply }];
+      setMessages(final);
+      chat.saveThread({
+        topicKey,
+        label: `${track === 'lld' ? 'LLD' : 'HLD'} — ${selected || 'General'}`,
+        messages: final,
+      });
     } catch (err) {
       if (err.code !== 'ERR_CANCELED') {
         setError(err.response?.data?.error || 'AI request failed.');
@@ -413,6 +456,16 @@ export default function Design() {
               {selected || 'Select a topic'}
               {selected && <Badge className="ml-2" color="accent">{track === 'lld' ? 'LLD' : 'HLD'}</Badge>}
             </p>
+            <div className="ml-auto">
+              <SavedChats
+                sessions={chat.sessions}
+                currentKey={topicKey}
+                onSelect={selectSaved}
+                onNew={newChat}
+                onDelete={deleteChat}
+                disabled={busy}
+              />
+            </div>
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto p-4">

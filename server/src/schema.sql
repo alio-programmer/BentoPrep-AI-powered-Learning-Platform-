@@ -166,6 +166,19 @@ create table if not exists public.sql_problems (
   updated_at timestamptz default now()
 );
 
+-- ---------- Chat sessions (persisted AI tutor conversations) ----------
+create table if not exists public.chat_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  channel text not null,
+  topic_key text not null,
+  topic_label text,
+  messages jsonb default '[]',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (user_id, channel, topic_key)
+);
+
 -- ---------- Resumes (saved PDFs + AI analysis) ----------
 create table if not exists public.resumes (
   id uuid primary key default gen_random_uuid(),
@@ -192,6 +205,7 @@ create index if not exists idx_sessions_user_date on public.study_sessions(user_
 create index if not exists idx_sql_user on public.sql_problems(user_id);
 create index if not exists idx_sql_topic on public.sql_problems(topic);
 create index if not exists idx_resumes_user on public.resumes(user_id);
+create index if not exists idx_chat_sessions_user_channel on public.chat_sessions(user_id, channel);
 
 -- ---------- Auto-create profile on signup ----------
 create or replace function public.handle_new_user()
@@ -243,6 +257,10 @@ drop trigger if exists trg_resumes_updated on public.resumes;
 create trigger trg_resumes_updated before update on public.resumes
   for each row execute procedure public.set_updated_at();
 
+drop trigger if exists trg_chat_sessions_updated on public.chat_sessions;
+create trigger trg_chat_sessions_updated before update on public.chat_sessions
+  for each row execute procedure public.set_updated_at();
+
 -- ---------- Row Level Security ----------
 alter table public.profiles enable row level security;
 alter table public.user_settings enable row level security;
@@ -254,6 +272,7 @@ alter table public.roadmap_days enable row level security;
 alter table public.study_sessions enable row level security;
 alter table public.sql_problems enable row level security;
 alter table public.resumes enable row level security;
+alter table public.chat_sessions enable row level security;
 
 create policy "own profile" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
@@ -283,4 +302,7 @@ create policy "own sql problems" on public.sql_problems
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "own resumes" on public.resumes
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "own chats" on public.chat_sessions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
