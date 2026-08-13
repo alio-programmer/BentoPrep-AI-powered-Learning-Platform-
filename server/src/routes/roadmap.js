@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
-import { generateRoadmap, generateResumeRoadmap, generateAiRoadmap } from '../services/roadmap.js';
+import { generateRoadmap, generateResumeRoadmap, generateAiRoadmap, generateCustomRoadmap } from '../services/roadmap.js';
 import { addDays } from '../services/spacedRepetition.js';
 import { resolveSettings } from '../services/aiProvider.js';
 
@@ -14,9 +14,9 @@ function dayDate(roadmapCreatedAt, dayNumber) {
   return addDays(base, dayNumber - 1).toISOString();
 }
 
-const VALID_TRACKS = ['dsa', 'sql', 'resume'];
+const VALID_TRACKS = ['dsa', 'sql', 'resume', 'custom'];
 
-// GET /api/roadmap?track=dsa|sql|resume — active roadmap with its days
+// GET /api/roadmap?track=dsa|sql|resume|custom — active roadmap with its days
 router.get('/', requireAuth, async (req, res) => {
   const track = VALID_TRACKS.includes(req.query.track) ? req.query.track : 'dsa';
   const { data: roadmap, error } = await supabase
@@ -48,6 +48,7 @@ router.post('/', requireAuth, async (req, res) => {
     duration_days: z.number().int().min(7).max(90),
     level: z.string().max(40).optional(),
     target: z.string().max(120).optional(),
+    custom_topic: z.string().max(200).optional(),
     daily_availability: z.string().max(40),
     track: z.enum(VALID_TRACKS).default('dsa'),
     resumeId: z.string().uuid().optional(),
@@ -93,6 +94,30 @@ router.post('/', requireAuth, async (req, res) => {
         settings,
         duration_days: parsed.data.duration_days,
         daily_availability: parsed.data.daily_availability,
+      });
+    } catch (err) {
+      return res.status(502).json({ error: err.message });
+    }
+  } else if (parsed.data.track === 'custom') {
+    if (!parsed.data.custom_topic?.trim()) {
+      return res.status(400).json({ error: 'Enter the topic you want to learn.' });
+    }
+    const { data: settingsRow } = await supabase
+      .from('user_settings')
+      .select('ai_provider, ai_model, ai_base_url, ai_api_key')
+      .eq('user_id', req.user.id)
+      .maybeSingle();
+    if (!settingsRow?.ai_api_key) {
+      return res.status(400).json({ error: 'No AI API key configured. Add your key in Settings → AI Provider.' });
+    }
+    const settings = resolveSettings(settingsRow);
+    try {
+      generated = await generateCustomRoadmap({
+        topic: parsed.data.custom_topic,
+        level: parsed.data.level || 'Beginner',
+        duration_days: parsed.data.duration_days,
+        daily_availability: parsed.data.daily_availability,
+        settings,
       });
     } catch (err) {
       return res.status(502).json({ error: err.message });
@@ -164,7 +189,7 @@ router.post('/', requireAuth, async (req, res) => {
   return res.status(201).json({ roadmap, days: dayRows });
 });
 
-// POST /api/roadmap/restart?track=dsa|sql|resume — reset progress and restart from today
+// POST /api/roadmap/restart?track=dsa|sql|resume|custom — reset progress and restart from today
 router.post('/restart', requireAuth, async (req, res) => {
   const track = VALID_TRACKS.includes(req.query.track) ? req.query.track : 'dsa';
 

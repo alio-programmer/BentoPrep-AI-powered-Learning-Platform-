@@ -127,6 +127,45 @@ Rules:
   };
 }
 
+// AI-based generator for a user-specified custom topic (no problem bank).
+export async function generateCustomRoadmap({ topic, level = 'Beginner', duration_days, daily_availability, settings }) {
+  const days = Math.min(Math.max(Number(duration_days) || 30, 7), 90);
+  const topicLabel = String(topic || '').trim().slice(0, 200) || 'Custom Topic';
+
+  const system = `You are a senior study coach and mentor.
+Build a ${days}-day, ${daily_availability || '2 hours'}/day learning roadmap to master the user's chosen topic from the ground up.
+
+Rules:
+- Return ONLY valid JSON, no markdown, no commentary. Shape:
+{ "days": [ { "day_number": 1, "type": "new|revision|concept|assessment|mock", "title": "short summary",
+"tasks": [ { "name": "specific task or concept to learn", "difficulty": "Easy|Medium|Hard|Concept|Mixed", "topic": "sub-topic" } ] } ] }
+- Generate exactly ${days} days (day_number 1..${days}).
+- Start with fundamentals and prerequisites, progress to core concepts, then advanced topics and application.
+- Mix learning tasks, hands-on practice/exercises, projects, revision days, weekly assessments, and a final mock/project day.
+- Tasks must be concrete and actionable for a ${level} level learner.
+- Anchor everything in the topic "${topicLabel}" — never drift to unrelated material.`;
+
+  const reply = await chatCompletion({
+    baseUrl: settings.baseUrl || settings.ai_base_url,
+    apiKey: settings.apiKey || settings.ai_api_key,
+    model: settings.model || settings.ai_model,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: `Topic to master: ${topicLabel}\nLevel: ${level}\nDuration: ${days} days\nDaily availability: ${daily_availability || '2 hours'}` },
+    ],
+    temperature: 0.6,
+  });
+
+  const parsed = extractJson(reply);
+  const normalized = normalizeResumeDays(parsed).slice(0, days);
+  if (normalized.length === 0) throw new Error('AI returned an empty roadmap');
+
+  return {
+    days: normalized,
+    meta: { target: topicLabel, level, duration_days: days, track: 'custom' },
+  };
+}
+
 const SQL_TOPICS = [
   {
     topic: 'Basic SQL',

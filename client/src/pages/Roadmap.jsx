@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarRange, Check, Plus, RefreshCw, Code2, Database, FileText, ChevronDown, BookOpen, ListChecks, Target, Users } from 'lucide-react';
+import { CalendarRange, Check, Plus, RefreshCw, Code2, Database, FileText, ChevronDown, BookOpen, ListChecks, Target, Users, Sparkles } from 'lucide-react';
 import api from '../api/client.js';
 import {
   Button, Card, Loading, EmptyState, Modal, Select, Input, Badge, PageHeader, cn,
@@ -40,7 +40,7 @@ export default function Roadmap() {
   const [resumes, setResumes] = useState([]);
   const [resumeId, setResumeId] = useState('');
   const [useAi, setUseAi] = useState(true);
-  const [form, setForm] = useState({ duration_days: 45, level: 'Intermediate', target: 'FAANG', daily_availability: '2 hours' });
+  const [form, setForm] = useState({ duration_days: 45, level: 'Intermediate', target: 'FAANG', daily_availability: '2 hours', custom_topic: '' });
 
   const fetchData = async (t = track) => {
     setLoading(true);
@@ -75,7 +75,9 @@ export default function Roadmap() {
     try {
       await api.post('/roadmap', track === 'resume'
         ? { track, resumeId, duration_days: form.duration_days, daily_availability: form.daily_availability }
-        : { ...form, track, ai: useAi });
+        : track === 'custom'
+          ? { track, custom_topic: form.custom_topic, duration_days: form.duration_days, daily_availability: form.daily_availability, level: form.level }
+          : { ...form, track, ai: useAi });
       await fetchData(track);
       setOpen(false);
     } catch (err) {
@@ -151,6 +153,15 @@ export default function Roadmap() {
         >
           <FileText className="size-4" /> Resume Roadmap
         </button>
+        <button
+          onClick={() => setTrack('custom')}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
+            track === 'custom' ? 'bg-accent text-white shadow-sm' : 'text-muted hover:text-ink'
+          )}
+        >
+          <Sparkles className="size-4" /> Custom Topic
+        </button>
       </div>
 
       {roadmap && (
@@ -175,13 +186,15 @@ export default function Roadmap() {
       {!roadmap ? (
         <EmptyState
           icon={CalendarRange}
-          title={track === 'sql' ? 'No SQL roadmap yet' : track === 'resume' ? 'No resume roadmap yet' : 'No roadmap yet'}
+          title={track === 'sql' ? 'No SQL roadmap yet' : track === 'resume' ? 'No resume roadmap yet' : track === 'custom' ? 'No custom roadmap yet' : 'No roadmap yet'}
           subtitle={track === 'sql'
             ? 'Generate a SQL preparation plan from basic SELECTs through joins, window functions and advanced SQL.'
             : track === 'resume'
               ? 'Upload a resume, then generate an AI-personalized interview-prep calendar based on your skills, target role and job description.'
-              : 'Generate a personalized preparation plan based on your target, level and available time.'}
-          action={<Button onClick={openModal}><Plus className="size-4" /> Generate {track === 'sql' ? 'SQL' : track === 'resume' ? 'resume' : ''} roadmap</Button>}
+              : track === 'custom'
+                ? 'Tell the AI any topic you want to master and it builds a day-by-day learning plan from fundamentals to advanced.'
+                : 'Generate a personalized preparation plan based on your target, level and available time.'}
+          action={<Button onClick={openModal}><Plus className="size-4" /> Generate {track === 'sql' ? 'SQL' : track === 'resume' ? 'resume' : track === 'custom' ? 'custom' : ''} roadmap</Button>}
         />
       ) : (
         <div className="space-y-6">
@@ -300,8 +313,21 @@ export default function Roadmap() {
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title={`Generate ${track === 'sql' ? 'SQL' : track === 'resume' ? 'Resume' : ''} roadmap`} width="max-w-md">
+      <Modal open={open} onClose={() => setOpen(false)} title={`Generate ${track === 'sql' ? 'SQL' : track === 'resume' ? 'Resume' : track === 'custom' ? 'Custom' : ''} roadmap`} width="max-w-md">
         <div className="space-y-3">
+          {track === 'custom' && (
+            <>
+              <Input
+                label="What do you want to learn?"
+                placeholder="e.g. System Design, React, Machine Learning, Docker, AWS…"
+                value={form.custom_topic}
+                onChange={(e) => setForm({ ...form, custom_topic: e.target.value })}
+              />
+              <p className="text-[11px] text-muted">
+                The AI builds a day-by-day study plan for your topic, from fundamentals to advanced. An AI key is required.
+              </p>
+            </>
+          )}
           <Select label="Duration" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: Number(e.target.value) })}>
             <option value={15}>15 days</option>
             <option value={30}>30 days</option>
@@ -323,6 +349,12 @@ export default function Roadmap() {
               <p className="text-[11px] text-muted">
                 The AI builds a personalized plan from your resume, target role and any pasted job description. An AI key is required.
               </p>
+            </>
+          ) : track === 'custom' ? (
+            <>
+              <Select label="Current level" value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })}>
+                <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+              </Select>
             </>
           ) : (
             <>
@@ -368,7 +400,7 @@ export default function Roadmap() {
           </Select>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={generate} disabled={generating || (track === 'resume' && !resumeId)}>
+            <Button onClick={generate} disabled={generating || (track === 'resume' && !resumeId) || (track === 'custom' && !form.custom_topic.trim())}>
               {generating ? 'Generating…' : 'Generate'}
             </Button>
           </div>
