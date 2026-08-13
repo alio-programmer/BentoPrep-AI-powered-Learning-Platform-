@@ -1,6 +1,8 @@
 // AI provider abstraction — OpenAI-compatible chat completions.
 // Works with DeepSeek and any OpenAI-compatible endpoint (custom base URL).
 
+import { decryptSecret } from './crypto.js';
+
 export const PROVIDERS = {
   deepseek: {
     label: 'DeepSeek',
@@ -71,13 +73,15 @@ export async function testConnection(settings) {
   return out.trim();
 }
 
-// Combine stored settings with provider presets.
+// Combine stored settings with provider presets. The stored API key is
+// encrypted at rest, so it is decrypted here — the single choke point for
+// every AI route that consumes a key.
 export function resolveSettings(stored) {
   const preset = PROVIDERS[stored?.ai_provider] || PROVIDERS.deepseek;
   return {
     provider: stored?.ai_provider || 'deepseek',
     baseUrl: stored?.ai_base_url || preset.baseUrl,
     model: stored?.ai_model || preset.model,
-    apiKey: stored?.ai_api_key || '',
+    apiKey: decryptSecret(stored?.ai_api_key),
   };
 }

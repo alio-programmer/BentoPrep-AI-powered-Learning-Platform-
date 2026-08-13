@@ -34,6 +34,21 @@ create table if not exists public.user_settings (
   updated_at timestamptz default now()
 );
 
+-- ---------- Saved AI credentials (multiple per user) ----------
+-- api_key is stored encrypted (AES-256-GCM) by the server; the active
+-- credential is mirrored into user_settings by the activate endpoint.
+create table if not exists public.ai_credentials (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  provider text not null default 'deepseek',
+  encrypted_api_key text not null,
+  base_url text,
+  model text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 -- ---------- Problems ----------
 create table if not exists public.problems (
   id uuid primary key default gen_random_uuid(),
@@ -206,6 +221,7 @@ create index if not exists idx_sql_user on public.sql_problems(user_id);
 create index if not exists idx_sql_topic on public.sql_problems(topic);
 create index if not exists idx_resumes_user on public.resumes(user_id);
 create index if not exists idx_chat_sessions_user_channel on public.chat_sessions(user_id, channel);
+create index if not exists idx_ai_credentials_user on public.ai_credentials(user_id);
 
 -- ---------- Auto-create profile on signup ----------
 create or replace function public.handle_new_user()
@@ -261,6 +277,10 @@ drop trigger if exists trg_chat_sessions_updated on public.chat_sessions;
 create trigger trg_chat_sessions_updated before update on public.chat_sessions
   for each row execute procedure public.set_updated_at();
 
+drop trigger if exists trg_ai_credentials_updated on public.ai_credentials;
+create trigger trg_ai_credentials_updated before update on public.ai_credentials
+  for each row execute procedure public.set_updated_at();
+
 -- ---------- Row Level Security ----------
 alter table public.profiles enable row level security;
 alter table public.user_settings enable row level security;
@@ -273,6 +293,7 @@ alter table public.study_sessions enable row level security;
 alter table public.sql_problems enable row level security;
 alter table public.resumes enable row level security;
 alter table public.chat_sessions enable row level security;
+alter table public.ai_credentials enable row level security;
 
 create policy "own profile" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
@@ -305,4 +326,7 @@ create policy "own resumes" on public.resumes
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "own chats" on public.chat_sessions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "own credentials" on public.ai_credentials
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

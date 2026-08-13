@@ -17,8 +17,15 @@ import resumeRoutes from './routes/resumes.js';
 import quizRoutes from './routes/quiz.js';
 import chatRoutes from './routes/chats.js';
 import { isConfigured } from './config/supabase.js';
+import { getEncryptionKey } from './services/crypto.js';
 
 dotenv.config();
+
+try {
+  getEncryptionKey();
+} catch (err) {
+  console.warn(`[crypto] ${err.message}`);
+}
 
 const app = express();
 const PORT = process.env.PORT || 4000;

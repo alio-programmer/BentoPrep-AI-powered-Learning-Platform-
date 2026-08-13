@@ -1,12 +1,27 @@
 import { useEffect, useState } from 'react';
-import { KeyRound, Eye, EyeOff, Save, CheckCircle2, XCircle, Loader2, Cpu } from 'lucide-react';
+import {
+  KeyRound,
+  Eye,
+  EyeOff,
+  Save,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Cpu,
+  Plus,
+  Pencil,
+  Trash2,
+  Power,
+  Star,
+} from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Button, Card, Input, Select, PageHeader, Badge, cn } from '../components/ui.jsx';
+import { Button, Card, Input, Select, PageHeader, Badge, Modal, cn } from '../components/ui.jsx';
 
 export default function Settings() {
   const { profile } = useAuth();
   const [settings, setSettings] = useState(null);
+  const [credentials, setCredentials] = useState([]);
   const [form, setForm] = useState({ provider: 'deepseek', model: '', baseUrl: '', apiKey: '' });
   const [showKey, setShowKey] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -14,11 +29,28 @@ export default function Settings() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
 
+  const [addOpen, setAddOpen] = useState(false);
+  const [addForm, setAddForm] = useState({ name: '', provider: 'deepseek', model: '', baseUrl: '', apiKey: '', activate: true });
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState('');
+
+  const [renameTarget, setRenameTarget] = useState(null);
+  const [renameName, setRenameName] = useState('');
+  const [renaming, setRenaming] = useState(false);
+
+  const [busyId, setBusyId] = useState(null);
+
+  const loadCredentials = async () => {
+    const { data } = await api.get('/settings/ai/credentials');
+    setCredentials(data.credentials || []);
+  };
+
   useEffect(() => {
     api.get('/settings/ai').then(({ data }) => {
       setSettings(data);
       setForm({ provider: data.provider, model: data.model, baseUrl: data.baseUrl, apiKey: '' });
     });
+    loadCredentials();
   }, []);
 
   const providerPreset = settings?.providers?.[form.provider];
@@ -60,16 +92,107 @@ export default function Settings() {
     setForm((f) => ({ ...f, provider: p, model: preset?.model || '', baseUrl: preset?.baseUrl || '' }));
   };
 
+  const openAdd = () => {
+    setAddForm({ name: '', provider: 'deepseek', model: '', baseUrl: '', apiKey: '', activate: true });
+    setAddError('');
+    setAddOpen(true);
+  };
+
+  const addCredential = async () => {
+    setAdding(true);
+    setAddError('');
+    try {
+      const preset = settings?.providers?.[addForm.provider];
+      const { data } = await api.post('/settings/ai/credentials', {
+        name: addForm.name || addForm.provider,
+        provider: addForm.provider,
+        model: addForm.model || preset?.model,
+        baseUrl: addForm.baseUrl || preset?.baseUrl,
+        apiKey: addForm.apiKey,
+        activate: addForm.activate,
+      });
+      if (addForm.activate) {
+        setSettings((s) => ({
+          ...s,
+          provider: data.provider,
+          model: data.model,
+          baseUrl: data.baseUrl,
+          hasKey: true,
+          keyMasked: data.keyMasked,
+        }));
+        setForm((f) => ({ ...f, provider: data.provider, model: data.model, baseUrl: data.baseUrl, apiKey: '' }));
+      }
+      setAddOpen(false);
+      loadCredentials();
+    } catch (err) {
+      setAddError(err.response?.data?.error || 'Failed to save credential.');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const activate = async (id) => {
+    setBusyId(id);
+    try {
+      const { data } = await api.post(`/settings/ai/credentials/${id}/activate`);
+      setSettings((s) => ({
+        ...s,
+        provider: data.provider,
+        model: data.model,
+        baseUrl: data.baseUrl,
+        hasKey: data.hasKey,
+      }));
+      setForm((f) => ({ ...f, provider: data.provider, model: data.model, baseUrl: data.baseUrl, apiKey: '' }));
+      loadCredentials();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const openRename = (cred) => {
+    setRenameTarget(cred);
+    setRenameName(cred.name);
+  };
+
+  const renameCredential = async () => {
+    if (!renameTarget || !renameName.trim()) return;
+    setRenaming(true);
+    try {
+      await api.put(`/settings/ai/credentials/${renameTarget.id}`, { name: renameName.trim() });
+      setRenameTarget(null);
+      loadCredentials();
+    } finally {
+      setRenaming(false);
+    }
+  };
+
+  const removeCredential = async (id) => {
+    if (!confirm('Delete this saved credential?')) return;
+    setBusyId(id);
+    try {
+      await api.delete(`/settings/ai/credentials/${id}`);
+      setCredentials((list) => list.filter((c) => c.id !== id));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const providerLabel = (key) => settings?.providers?.[key]?.label || key;
+  const isActive = (cred) =>
+    settings?.provider === cred.provider &&
+    settings?.model === cred.model &&
+    settings?.baseUrl === cred.baseUrl;
+
   return (
     <div>
-      <PageHeader title="Settings" subtitle="Manage your AI key and profile." />
+      <PageHeader title="Settings" subtitle="Manage your AI keys and profile." />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Card>
             <div className="mb-4 flex items-center gap-2">
               <KeyRound className="size-4 text-accent" />
-              <h2 className="text-sm font-semibold">AI Provider & API Key</h2>
+              <h2 className="text-sm font-semibold">Active AI Provider</h2>
             </div>
 
             <div className="space-y-4">
@@ -142,7 +265,7 @@ export default function Settings() {
                 </div>
                 {settings?.hasKey && (
                   <p className="mt-1.5 text-[11px] text-muted">
-                    Key stored on the server (per user) — it never reaches the browser.
+                    Key encrypted at rest (AES-256-GCM) — it never reaches the browser.
                   </p>
                 )}
                 {saved && <p className="mt-1.5 text-[11px] text-ok">Saved successfully.</p>}
@@ -176,6 +299,67 @@ export default function Settings() {
                 )}
               </div>
             </div>
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Star className="size-4 text-accent" />
+                <h2 className="text-sm font-semibold">Saved Credentials</h2>
+              </div>
+              <Button size="sm" onClick={openAdd}>
+                <Plus className="size-4" />
+                Add credential
+              </Button>
+            </div>
+
+            {credentials.length === 0 ? (
+              <p className="py-6 text-center text-xs text-muted">
+                No saved credentials yet. Add one to quickly switch between providers or API keys.
+              </p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {credentials.map((cred) => {
+                  const active = isActive(cred);
+                  return (
+                    <li key={cred.id} className="flex items-center gap-3 py-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium">{cred.name}</span>
+                          {active && <Badge color="ok">Active</Badge>}
+                        </div>
+                        <p className="mt-0.5 truncate font-mono text-xs text-muted">
+                          {providerLabel(cred.provider)} · {cred.keyMasked || 'no key'}
+                          {cred.model ? ` · ${cred.model}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <Button variant="outline" size="sm" disabled={active} onClick={() => activate(cred.id)}>
+                          {busyId === cred.id ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <Power className="size-3.5" />
+                          )}
+                          Use
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openRename(cred)}>
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted hover:bg-danger/15 hover:text-danger"
+                          onClick={() => removeCredential(cred.id)}
+                          disabled={busyId === cred.id}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </Card>
         </div>
 
@@ -226,6 +410,95 @@ export default function Settings() {
           </Card>
         </div>
       </div>
+
+      <Modal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        title="Add credential"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button onClick={addCredential} disabled={adding}>
+              {adding ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              Add
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {addError && (
+            <p className="rounded-lg bg-danger-soft px-3 py-2 text-xs text-danger">{addError}</p>
+          )}
+          <Input
+            label="Name"
+            value={addForm.name}
+            onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+            placeholder="e.g. DeepSeek (work)"
+          />
+          <Select
+            label="Provider"
+            value={addForm.provider}
+            onChange={(e) => setAddForm({ ...addForm, provider: e.target.value })}
+          >
+            {Object.entries(settings?.providers || {}).map(([key, p]) => (
+              <option key={key} value={key}>{p.label}</option>
+            ))}
+          </Select>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              label="Model"
+              value={addForm.model}
+              onChange={(e) => setAddForm({ ...addForm, model: e.target.value })}
+              placeholder={settings?.providers?.[addForm.provider]?.model || 'e.g. deepseek-chat'}
+            />
+            <Input
+              label="Base URL"
+              value={addForm.baseUrl}
+              onChange={(e) => setAddForm({ ...addForm, baseUrl: e.target.value })}
+              placeholder={settings?.providers?.[addForm.provider]?.baseUrl || 'https://api.deepseek.com'}
+            />
+          </div>
+          <Input
+            label="API key"
+            type="password"
+            autoComplete="off"
+            value={addForm.apiKey}
+            onChange={(e) => setAddForm({ ...addForm, apiKey: e.target.value })}
+            placeholder="sk-••••••••••••"
+          />
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
+            <input
+              type="checkbox"
+              checked={addForm.activate}
+              onChange={(e) => setAddForm({ ...addForm, activate: e.target.checked })}
+              className="size-4 accent-accent"
+            />
+            Activate this credential immediately
+          </label>
+        </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(renameTarget)}
+        onClose={() => setRenameTarget(null)}
+        title="Rename credential"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setRenameTarget(null)}>Cancel</Button>
+            <Button onClick={renameCredential} disabled={renaming || !renameName.trim()}>
+              {renaming ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+              Save
+            </Button>
+          </>
+        }
+      >
+        <Input
+          label="Name"
+          value={renameName}
+          onChange={(e) => setRenameName(e.target.value)}
+          autoFocus
+        />
+      </Modal>
     </div>
   );
 }
