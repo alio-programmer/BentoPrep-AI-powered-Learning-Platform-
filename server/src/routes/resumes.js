@@ -201,6 +201,7 @@ router.post('/:id/analyze', requireAuth, async (req, res) => {
     const settings = resolveSettings(settingsRow);
     const reply = await chatCompletion({
       baseUrl: settings.baseUrl || settings.ai_base_url,
+      provider: settings.provider,
       apiKey: settings.apiKey || settings.ai_api_key,
       model: settings.model || settings.ai_model,
       messages: [

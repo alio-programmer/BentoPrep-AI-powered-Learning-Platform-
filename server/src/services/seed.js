@@ -190,7 +190,8 @@ async function main() {
   await supabase.from('problems').delete().eq('user_id', uid);
   await supabase.from('memory_cards').delete().eq('user_id', uid);
   await supabase.from('reviews').delete().eq('user_id', uid);
-  await supabase.from('roadmaps').update({ status: 'archived' }).eq('user_id', uid);
+  await supabase.from('roadmap_days').delete().eq('user_id', uid);
+  await supabase.from('roadmaps').delete().eq('user_id', uid);
 
   // spread solve dates over the last 14 days
   const dates = Array.from({ length: SAMPLE_PROBLEMS.length }, (_, i) => {

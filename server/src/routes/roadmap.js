@@ -4,7 +4,7 @@ import { supabase } from '../config/supabase.js';
 import { requireAuth } from '../middleware/auth.js';
 import { generateRoadmap, generateResumeRoadmap, generateAiRoadmap, generateCustomRoadmap } from '../services/roadmap.js';
 import { addDays } from '../services/spacedRepetition.js';
-import { resolveSettings } from '../services/aiProvider.js';
+import { resolveSettings, chatCompletion } from '../services/aiProvider.js';
 
 const router = Router();
 
@@ -56,13 +56,6 @@ router.post('/', requireAuth, async (req, res) => {
   });
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
-
-  await supabase
-    .from('roadmaps')
-    .update({ status: 'archived' })
-    .eq('user_id', req.user.id)
-    .eq('track', parsed.data.track)
-    .eq('status', 'active');
 
   let generated;
   if (parsed.data.track === 'resume') {
@@ -152,20 +145,51 @@ router.post('/', requireAuth, async (req, res) => {
     });
   }
 
-  const { data: roadmap, error } = await supabase
+  // One roadmap per track per user (max 4 total). Regenerating a track
+  // overwrites its existing row instead of archiving and appending.
+  const payload = {
+    user_id: req.user.id,
+    duration_days: parsed.data.duration_days,
+    level: generated.meta.level || parsed.data.level || null,
+    target: generated.meta.target || parsed.data.target || null,
+    daily_availability: parsed.data.daily_availability,
+    track: parsed.data.track,
+    resume_id: parsed.data.track === 'resume' ? parsed.data.resumeId : null,
+    status: 'active',
+    created_at: new Date().toISOString(),
+  };
+
+  const { data: existing } = await supabase
     .from('roadmaps')
-    .insert({
-      user_id: req.user.id,
-      duration_days: parsed.data.duration_days,
-      level: generated.meta.level || parsed.data.level || null,
-      target: generated.meta.target || parsed.data.target || null,
-      daily_availability: parsed.data.daily_availability,
-      track: parsed.data.track,
-      resume_id: parsed.data.track === 'resume' ? parsed.data.resumeId : null,
-      status: 'active',
-    })
-    .select('*')
-    .single();
+    .select('id')
+    .eq('user_id', req.user.id)
+    .eq('track', parsed.data.track)
+    .maybeSingle();
+
+  let roadmap;
+  let error;
+  if (existing) {
+    const res = await supabase
+      .from('roadmaps')
+      .update(payload)
+      .eq('id', existing.id)
+      .eq('user_id', req.user.id)
+      .select('*')
+      .single();
+    roadmap = res.data;
+    error = res.error;
+    if (!error) {
+      await supabase
+        .from('roadmap_days')
+        .delete()
+        .eq('roadmap_id', existing.id)
+        .eq('user_id', req.user.id);
+    }
+  } else {
+    const res = await supabase.from('roadmaps').insert(payload).select('*').single();
+    roadmap = res.data;
+    error = res.error;
+  }
   if (error) return res.status(500).json({ error: error.message });
 
   const rows = generated.days.map((day) => ({
@@ -233,6 +257,81 @@ router.post('/restart', requireAuth, async (req, res) => {
   if (fetchErr) return res.status(500).json({ error: fetchErr.message });
 
   return res.json({ roadmap: { ...roadmap, created_at: now.toISOString() }, days: updatedDays || [] });
+});
+
+// POST /api/roadmap/explain — AI interview-ready explanation for a task/topic.
+// The result is saved to roadmap_days.task_explanations[taskIndex] so it
+// survives reloads until the roadmap is regenerated.
+router.post('/explain', requireAuth, async (req, res) => {
+  const schema = z.object({
+    dayId: z.string().uuid(),
+    taskIndex: z.number().int().min(0).max(50),
+    task: z.string().min(1).max(300),
+    topic: z.string().max(120).optional().nullable(),
+    difficulty: z.string().max(40).optional().nullable(),
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+  const { data: day, error: dayErr } = await supabase
+    .from('roadmap_days')
+    .select('id, task_explanations')
+    .eq('id', parsed.data.dayId)
+    .eq('user_id', req.user.id)
+    .maybeSingle();
+  if (dayErr) return res.status(500).json({ error: dayErr.message });
+  if (!day) return res.status(404).json({ error: 'Day not found' });
+
+  const { data: settingsRow } = await supabase
+    .from('user_settings')
+    .select('ai_provider, ai_model, ai_base_url, ai_api_key')
+    .eq('user_id', req.user.id)
+    .maybeSingle();
+  if (!settingsRow?.ai_api_key) {
+    return res.status(400).json({ error: 'No AI API key configured. Add your key in Settings → AI Provider.' });
+  }
+
+  const { taskIndex, task, topic, difficulty } = parsed.data;
+  try {
+    const settings = resolveSettings(settingsRow);
+    const system = `You are a senior interview preparation coach. Explain the given topic or problem the way a strong candidate would present it in a technical interview.
+
+Structure your answer as markdown:
+- **What it is** — a one-line definition.
+- **Approach** — the core idea/algorithm, step by step, in plain language.
+- **Complexity** — time and space complexity and why.
+- **Example** — a short, concrete walkthrough.
+- **Edge cases & pitfalls** — the common traps an interviewer looks for.
+- **How to say it** — 2-3 bullet points on talking through it out loud.
+
+Keep it focused and interview-ready: no fluff, no long essays. Use short code snippets only when they clarify.`;
+    const reply = await chatCompletion({
+      provider: settings.provider,
+      baseUrl: settings.baseUrl || settings.ai_base_url,
+      apiKey: settings.apiKey || settings.ai_api_key,
+      model: settings.model || settings.ai_model,
+      messages: [
+        { role: 'system', content: system },
+        {
+          role: 'user',
+          content: `Explain "${task}"${topic ? ` (Topic: ${topic})` : ''}${difficulty ? ` (Difficulty: ${difficulty})` : ''} for an interview.`,
+        },
+      ],
+      temperature: 0.5,
+    });
+
+    const next = { ...(day.task_explanations || {}) };
+    next[String(taskIndex)] = reply;
+    await supabase
+      .from('roadmap_days')
+      .update({ task_explanations: next })
+      .eq('id', day.id)
+      .eq('user_id', req.user.id);
+
+    return res.json({ explanation: reply });
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
 });
 
 // PUT /api/roadmap/days/:id — toggle completion

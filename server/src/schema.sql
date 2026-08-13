@@ -119,7 +119,7 @@ create table if not exists public.reviews (
   next_due timestamptz
 );
 
--- ---------- Roadmaps ----------
+-- ---------- Roadmaps (one active per track per user — max 4) ----------
 create table if not exists public.roadmaps (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -129,7 +129,8 @@ create table if not exists public.roadmaps (
   daily_availability text,
   track text default 'dsa',
   status text default 'active',
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  unique (user_id, track)
 );
 
 -- ---------- Roadmap days (calendar) ----------
@@ -141,6 +142,7 @@ create table if not exists public.roadmap_days (
   type text not null,
   title text,
   tasks jsonb default '[]',
+  task_explanations jsonb default '{}',
   status text default 'pending',
   date timestamptz,
   created_at timestamptz default now(),

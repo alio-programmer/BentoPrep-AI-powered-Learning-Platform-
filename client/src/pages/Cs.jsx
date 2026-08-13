@@ -92,11 +92,13 @@ export default function Cs() {
         setCurriculum(c);
         setSelected(c.dbms[0]?.concepts[0] || t.dbms[0]?.name || null);
         setHasKey(s.data.hasKey);
-      } finally {
-        setLoading(false);
         const first = c.dbms?.[0]?.concepts?.[0] || t.dbms?.[0]?.name || '';
         const msgs = await chat.loadThread(`dbms:${first}`);
         if (msgs) setMessages(msgs);
+      } catch {
+        // initial data load failed; page still renders with empty state
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);

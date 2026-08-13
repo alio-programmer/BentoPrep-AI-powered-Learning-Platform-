@@ -17,7 +17,7 @@ export function getEncryptionKey() {
   const raw = process.env.CREDENTIALS_ENC_KEY;
   if (!raw) {
     throw new Error(
-      '[crypto] Missing CREDENTIALS_ENC_KEY in server/.env. Set a base64 32-byte key (see .env.example) to enable credential encryption.'
+      '[crypto] CREDENTIALS_ENC_KEY is not set in the server environment. Add it (must be the same base64 32-byte key used on the server where the API key was saved — see server/.env.example) and restart the server.'
     );
   }
   let key;
@@ -62,9 +62,16 @@ export function decryptSecret(stored) {
     Buffer.from(ivB64, 'base64')
   );
   decipher.setAuthTag(Buffer.from(tagB64, 'base64'));
-  const decrypted = Buffer.concat([
-    decipher.update(Buffer.from(dataB64, 'base64')),
-    decipher.final(),
-  ]);
+  let decrypted;
+  try {
+    decrypted = Buffer.concat([
+      decipher.update(Buffer.from(dataB64, 'base64')),
+      decipher.final(),
+    ]);
+  } catch {
+    throw new Error(
+      'Your saved API key could not be decrypted — the server\'s encryption key (CREDENTIALS_ENC_KEY) does not match the one used when it was saved. Set the matching key on the server, or re-save the key in Settings.'
+    );
+  }
   return decrypted.toString('utf8');
 }

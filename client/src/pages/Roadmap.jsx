@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { CalendarRange, Check, Plus, RefreshCw, Code2, Database, FileText, ChevronDown, BookOpen, ListChecks, Target, Users, Sparkles } from 'lucide-react';
+import { CalendarRange, Check, Plus, RefreshCw, Code2, Database, FileText, ChevronDown, BookOpen, ListChecks, Target, Users, Sparkles, Loader2 } from 'lucide-react';
 import api, { errorMessage } from '../api/client.js';
+import { fmt } from '../lib/markdown.jsx';
 import {
   Button, Card, Loading, EmptyState, Modal, Select, Input, Badge, PageHeader, cn,
 } from '../components/ui.jsx';
@@ -41,6 +42,8 @@ export default function Roadmap() {
   const [resumeId, setResumeId] = useState('');
   const [useAi, setUseAi] = useState(true);
   const [form, setForm] = useState({ duration_days: 45, level: 'Intermediate', target: 'FAANG', daily_availability: '2 hours', custom_topic: '' });
+  const [explaining, setExplaining] = useState(null);
+  const [explanations, setExplanations] = useState({});
 
   const fetchData = async (t = track) => {
     setLoading(true);
@@ -48,6 +51,13 @@ export default function Roadmap() {
       const { data } = await api.get(`/roadmap?track=${t}`);
       setRoadmap(data.roadmap);
       setDays(data.days);
+      const seed = {};
+      (data.days || []).forEach((day) => {
+        Object.entries(day.task_explanations || {}).forEach(([idx, text]) => {
+          seed[`${day.id}:${idx}`] = { text, hidden: false };
+        });
+      });
+      setExplanations(seed);
     } finally {
       setLoading(false);
     }
@@ -105,6 +115,30 @@ export default function Roadmap() {
       return next;
     });
     setExpanded(null);
+  };
+
+  const explainWithAI = async (day, task, i) => {
+    const key = `${day.id}:${i}`;
+    setExplaining(key);
+    setExplanations((m) => ({ ...m, [key]: { loading: true } }));
+    try {
+      const { data } = await api.post('/roadmap/explain', {
+        dayId: day.id,
+        taskIndex: i,
+        task: task.name,
+        topic: task.topic,
+        difficulty: task.difficulty,
+      });
+      setExplanations((m) => ({ ...m, [key]: { text: data.explanation, hidden: false } }));
+    } catch (err) {
+      setExplanations((m) => ({ ...m, [key]: { error: errorMessage(err, 'Explain failed.') } }));
+    } finally {
+      setExplaining(null);
+    }
+  };
+
+  const toggleExplanation = (key) => {
+    setExplanations((m) => ({ ...m, [key]: { ...m[key], hidden: !m[key]?.hidden } }));
   };
 
   if (loading) return <Loading />;
@@ -287,18 +321,43 @@ export default function Roadmap() {
                         {isExpanded && (
                           <div className="border-t border-line bg-bg/40 px-5 py-4">
                             <ul className="grid gap-2 sm:grid-cols-2">
-                              {(day.tasks || []).map((t, i) => (
-                                <li key={i} className="flex items-start gap-2.5 rounded-lg border border-line bg-surface px-3 py-2.5">
-                                  <span className="mt-0.5 text-accent">•</span>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-xs leading-snug">{t.name}</p>
-                                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                      {t.topic && <Badge>{t.topic}</Badge>}
-                                      {t.difficulty && difficultyBadge(t.difficulty)}
+                              {(day.tasks || []).map((t, i) => {
+                                const key = `${day.id}:${i}`;
+                                const expl = explanations[key];
+                                return (
+                                  <li key={i} className="flex items-start gap-2.5 rounded-lg border border-line bg-surface px-3 py-2.5">
+                                    <span className="mt-0.5 text-accent">•</span>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-xs leading-snug">{t.name}</p>
+                                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                        {t.topic && <Badge>{t.topic}</Badge>}
+                                        {t.difficulty && difficultyBadge(t.difficulty)}
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => (expl?.text ? toggleExplanation(key) : explainWithAI(day, t, i))}
+                                        disabled={explaining === key || expl?.loading}
+                                        className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-soft px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/15 disabled:opacity-50"
+                                      >
+                                        {expl?.loading ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
+                                        {expl?.loading
+                                          ? 'Explaining…'
+                                          : expl?.text
+                                            ? (expl.hidden ? 'Show explanation' : 'Hide explanation')
+                                            : (expl?.error ? 'Try again' : 'Explain with AI')}
+                                      </button>
+                                      {expl?.error && (
+                                        <p className="mt-2 rounded-md bg-danger-soft px-2 py-1.5 text-[11px] text-danger">{expl.error}</p>
+                                      )}
+                                      {expl?.text && !expl.hidden && (
+                                        <div className="mt-2 rounded-md border border-line bg-bg/60 px-3 py-2.5 text-xs text-ink [&_pre]:my-1 [&_code]:text-[11px]">
+                                          {fmt(expl.text)}
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
-                                </li>
-                              ))}
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </div>
                         )}

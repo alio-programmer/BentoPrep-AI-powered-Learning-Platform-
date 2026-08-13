@@ -211,11 +211,13 @@ export default function Design() {
         setCurriculum(c);
         setSelected(c.lld[0]?.concepts[0] || t.lld[0]?.name || null);
         setHasKey(s.data.hasKey);
-      } finally {
-        setLoading(false);
         const first = c.lld?.[0]?.concepts?.[0] || t.lld?.[0]?.name || '';
         const msgs = await chat.loadThread(`lld:${first}`);
         if (msgs) setMessages(msgs);
+      } catch {
+        // initial data load failed; page still renders with empty state
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);

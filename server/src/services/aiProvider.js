@@ -1,5 +1,6 @@
-// AI provider abstraction — OpenAI-compatible chat completions.
-// Works with DeepSeek and any OpenAI-compatible endpoint (custom base URL).
+// AI provider abstraction — OpenAI-compatible chat completions plus a
+// native Anthropic (Claude) connector. DeepSeek and custom OpenAI-compatible
+// endpoints share the OpenAI protocol; Anthropic uses its own Messages API.
 
 import { decryptSecret } from './crypto.js';
 
@@ -14,6 +15,11 @@ export const PROVIDERS = {
     baseUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
   },
+  anthropic: {
+    label: 'Anthropic (Claude)',
+    baseUrl: 'https://api.anthropic.com',
+    model: 'claude-3-5-sonnet-20241022',
+  },
   custom: {
     label: 'Custom (OpenAI-compatible)',
     baseUrl: '',
@@ -27,8 +33,14 @@ function normalizeBaseUrl(url) {
   return base;
 }
 
-// Low-level chat completion call.
-export async function chatCompletion({ baseUrl, apiKey, model, messages, maxTokens, temperature = 0.7 }) {
+// Dispatch to the right protocol based on the configured provider.
+export function chatCompletion(opts) {
+  if (opts.provider === 'anthropic') return anthropicChatCompletion(opts);
+  return openAiChatCompletion(opts);
+}
+
+// Low-level chat completion call (OpenAI-compatible protocol).
+async function openAiChatCompletion({ baseUrl, apiKey, model, messages, maxTokens, temperature = 0.7 }) {
   if (!apiKey) throw new Error('No AI API key configured');
   if (!model) throw new Error('No AI model configured');
 
@@ -60,9 +72,50 @@ export async function chatCompletion({ baseUrl, apiKey, model, messages, maxToke
   return json.choices?.[0]?.message?.content || '';
 }
 
+// Low-level chat completion call (Anthropic Messages API).
+// System messages are moved to the top-level "system" field, which is how
+// Anthropic models expect them.
+async function anthropicChatCompletion({ baseUrl, apiKey, model, messages, maxTokens, temperature = 0.7 }) {
+  if (!apiKey) throw new Error('No AI API key configured');
+  if (!model) throw new Error('No AI model configured');
+
+  const endpoint = `${normalizeBaseUrl(baseUrl)}/v1/messages`;
+  const system = (messages || [])
+    .filter((m) => m.role === 'system')
+    .map((m) => m.content)
+    .filter(Boolean)
+    .join('\n\n');
+  const body = {
+    model,
+    max_tokens: maxTokens || 1024, // Anthropic requires max_tokens
+    temperature,
+    messages: (messages || []).filter((m) => m.role !== 'system'),
+  };
+  if (system) body.system = system;
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`AI request failed (${res.status}): ${text.slice(0, 300)}`);
+  }
+
+  const json = await res.json();
+  return json.content?.[0]?.text || '';
+}
+
 // Test connection with a tiny completion.
 export async function testConnection(settings) {
   const out = await chatCompletion({
+    provider: settings.provider,
     baseUrl: settings.baseUrl || settings.ai_base_url,
     apiKey: settings.apiKey || settings.ai_api_key,
     model: settings.model || settings.ai_model,
