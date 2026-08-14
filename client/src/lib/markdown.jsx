@@ -52,8 +52,71 @@ export function CodeBlock({ code, language }) {
   );
 }
 
+function isTableSeparator(t) {
+  return t.includes('|') && /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(t);
+}
+
+// A table starts when a line with "|" is immediately followed by a separator row.
+function isTableStart(lines, i) {
+  const t = lines[i].trim();
+  if (!t.includes('|')) return false;
+  const next = lines[i + 1];
+  return Boolean(next) && isTableSeparator(next.trim());
+}
+
+function splitRow(line) {
+  let t = String(line || '').trim();
+  if (t.startsWith('|')) t = t.slice(1);
+  if (t.endsWith('|')) t = t.slice(0, -1);
+  return t.split('|').map((c) => c.trim());
+}
+
+function alignFromCell(cell) {
+  const t = String(cell || '').trim();
+  const left = t.startsWith(':');
+  const right = t.endsWith(':');
+  if (left && right) return 'center';
+  if (right) return 'right';
+  return 'left';
+}
+
+function alignClass(align) {
+  if (align === 'center') return 'text-center';
+  if (align === 'right') return 'text-right';
+  return '';
+}
+
+function renderTable(header, align, body, key) {
+  return (
+    <div key={key} className="my-2 overflow-x-auto">
+      <table className="w-full border-collapse text-xs">
+        <thead>
+          <tr>
+            {header.map((h, i) => (
+              <th key={i} className={`border-b border-line bg-surface-2 px-3 py-1.5 font-semibold text-muted ${alignClass(align[i])}`}>
+                {inline(h, i)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {body.map((row, ri) => (
+            <tr key={ri}>
+              {row.map((cell, ci) => (
+                <td key={ci} className={`border-b border-line px-3 py-1.5 align-top text-ink ${alignClass(align[ci])}`}>
+                  {inline(cell, ci)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function fmt(text) {
-  // Minimal markdown rendering: headings, lists, code blocks, inline styles.
+  // Minimal markdown rendering: headings, lists, tables, code blocks, inline styles.
   // Diagrams render as Mermaid only inside explicit ```mermaid code fences.
   const lines = text.split('\n');
   const out = [];
@@ -74,8 +137,8 @@ export function fmt(text) {
     }
   };
 
-  lines.forEach((line, i) => {
-    const t = line.trim();
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
     if (t.startsWith('```')) {
       if (inCode) {
         flushCode(`code-${i}`);
@@ -85,11 +148,27 @@ export function fmt(text) {
         inCode = true;
         codeLang = t.slice(3).trim();
       }
-      return;
+      continue;
     }
     if (inCode) {
-      codeBuf.push(line);
-      return;
+      codeBuf.push(lines[i]);
+      continue;
+    }
+    if (isTableStart(lines, i)) {
+      const block = [lines[i]];
+      let j = i + 1;
+      while (j < lines.length) {
+        const tj = lines[j].trim();
+        if (tj === '' || !tj.includes('|')) break;
+        block.push(lines[j]);
+        j++;
+      }
+      const header = splitRow(block[0]);
+      const align = splitRow(block[1]).map(alignFromCell);
+      const body = block.slice(2).map(splitRow);
+      out.push(renderTable(header, align, body, `table-${i}`));
+      i = j - 1;
+      continue;
     }
     if (t.startsWith('### ')) {
       out.push(<h5 key={i} className="mt-3 mb-1 text-[13px] font-bold">{t.slice(4)}</h5>);
@@ -119,7 +198,7 @@ export function fmt(text) {
     } else {
       out.push(<p key={i} className="py-0.5 leading-relaxed">{inline(t)}</p>);
     }
-  });
+  }
   flushCode('code-final');
   return out;
 }
