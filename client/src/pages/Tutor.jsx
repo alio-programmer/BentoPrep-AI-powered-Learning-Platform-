@@ -20,8 +20,8 @@ function Message({ role, content }) {
     <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
       <div
         className={cn(
-          'max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm',
-          isUser ? 'bg-accent text-white' : 'border border-line bg-surface-2'
+          'rounded-xl px-4 py-3 text-sm',
+          isUser ? 'max-w-[80%] bg-accent text-white' : 'max-w-[95%] w-full border border-line bg-surface-2'
         )}
       >
         {isUser ? content : fmt(content)}
@@ -168,14 +168,78 @@ export default function Tutor() {
   const modeList = Object.entries(modes);
 
   return (
-    <div>
-      <PageHeader
-        title="AI Tutor"
-        subtitle="Hint, Socratic, Explain, Code Review and Interviewer modes powered by your AI key."
-      />
+    <div className="flex flex-1 flex-col h-full min-h-0 w-full gap-2.5">
+      {/* Sleek unified header & mode bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div>
+          <h1 className="text-lg font-bold tracking-tight text-ink sm:text-xl">AI Tutor</h1>
+          <p className="text-xs text-muted">
+            Hint, Socratic, Explain, Code Review and Interviewer modes powered by your AI key.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Mode Pill Bar */}
+          <div className="flex flex-wrap gap-1 rounded-xl border border-line bg-surface p-1 shadow-xs">
+            {modeList.map(([key, meta]) => (
+              <button
+                key={key}
+                onClick={() => switchMode(key)}
+                className={cn(
+                  'rounded-lg px-2.5 py-1 text-xs font-medium transition-all',
+                  mode === key
+                    ? 'bg-accent text-white shadow-xs'
+                    : 'text-muted hover:bg-surface-2 hover:text-ink'
+                )}
+              >
+                {meta.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Context Selector */}
+          <div className="flex items-center gap-1 rounded-xl border border-line bg-surface p-1 shadow-xs">
+            <Select value={contextType} onChange={(e) => changeContextType(e.target.value)} className="h-7 w-32 border-none bg-transparent text-xs focus:ring-0">
+              <option value="">No context</option>
+              <option value="problem">DSA problem</option>
+              <option value="card">Memory card</option>
+            </Select>
+            {contextType === 'problem' && (
+              <Select value={contextId} onChange={(e) => changeContextId(e.target.value)} className="h-7 min-w-[180px] max-w-[260px] border-none bg-transparent text-xs focus:ring-0">
+                {problems.length === 0 ? (
+                  <option value="">No problems yet</option>
+                ) : (
+                  <>
+                    <option value="">Select problem…</option>
+                    {problems.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </>
+                )}
+              </Select>
+            )}
+            {contextType === 'card' && (
+              <Select value={contextId} onChange={(e) => changeContextId(e.target.value)} className="h-7 min-w-[180px] max-w-[260px] border-none bg-transparent text-xs focus:ring-0">
+                {cards.length === 0 ? (
+                  <option value="">No cards yet</option>
+                ) : (
+                  <>
+                    <option value="">Select card…</option>
+                    {cards.map((c) => (
+                      <option key={c.id} value={c.id}>{c.front_title}</option>
+                    ))}
+                  </>
+                )}
+              </Select>
+            )}
+            {contextType === 'problem' && contextId && <Badge color="info" className="h-6 py-0 px-1.5"><FileText className="size-3" /> Context</Badge>}
+            {contextType === 'card' && contextId && <Badge color="info" className="h-6 py-0 px-1.5"><CreditCard className="size-3" /> Context</Badge>}
+          </div>
+        </div>
+      </div>
 
       {!hasKey && (
-        <Card className="mb-5 flex items-start gap-3 border-warn/40 bg-warn-soft/40 p-4">
+        <Card className="flex items-start gap-3 border-warn/40 bg-warn-soft/40 p-3 shrink-0">
           <BookOpen className="mt-0.5 size-4 shrink-0 text-warn" />
           <div>
             <p className="text-sm font-semibold">Add your AI key to unlock the tutor</p>
@@ -186,61 +250,9 @@ export default function Tutor() {
         </Card>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {modeList.map(([key, meta]) => (
-          <button
-            key={key}
-            onClick={() => switchMode(key)}
-            className={cn(
-              'rounded-lg border px-3 py-2 text-xs font-medium transition-all',
-              mode === key ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted hover:border-accent/40 hover:text-ink'
-            )}
-          >
-            {meta.label}
-          </button>
-        ))}
-      </div>
-
-      <Card className="mb-4 flex flex-wrap items-center gap-3 p-3">
-        <Select value={contextType} onChange={(e) => changeContextType(e.target.value)} className="w-40">
-          <option value="">No context</option>
-          <option value="problem">DSA problem</option>
-          <option value="card">Memory card</option>
-        </Select>
-        {contextType === 'problem' && (
-          <Select value={contextId} onChange={(e) => changeContextId(e.target.value)} className="min-w-[240px] flex-1">
-            {problems.length === 0 ? (
-              <option value="">No problems yet — add one in DSA Problems</option>
-            ) : (
-              <>
-                <option value="">Select a problem…</option>
-                {problems.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </>
-            )}
-          </Select>
-        )}
-        {contextType === 'card' && (
-          <Select value={contextId} onChange={(e) => changeContextId(e.target.value)} className="min-w-[240px] flex-1">
-            {cards.length === 0 ? (
-              <option value="">No cards yet — add a DSA problem first</option>
-            ) : (
-              <>
-                <option value="">Select a card…</option>
-                {cards.map((c) => (
-                  <option key={c.id} value={c.id}>{c.front_title}</option>
-                ))}
-              </>
-            )}
-          </Select>
-        )}
-        {contextType === 'problem' && contextId && <Badge color="info"><FileText className="size-3" /> Problem context</Badge>}
-        {contextType === 'card' && contextId && <Badge color="info"><CreditCard className="size-3" /> Card context</Badge>}
-      </Card>
-
-      <Card className="flex h-[520px] flex-col overflow-hidden p-0">
-        <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
+      {/* Main Full-Size Chat Card */}
+      <Card className="flex flex-1 flex-col min-h-0 overflow-hidden p-0 shadow-sm border border-line">
+        <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5 shrink-0 bg-surface/50">
           <Sparkles className="size-4 text-accent" />
           <p className="text-sm font-semibold">
             {modes[mode]?.label || 'AI Tutor'}
@@ -258,15 +270,15 @@ export default function Tutor() {
           </div>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 lg:p-6 min-h-0">
           {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-              <Sparkles className="size-8 text-accent/60" />
+            <div className="flex h-full flex-col items-center justify-center gap-4 text-center py-8">
+              <Sparkles className="size-10 text-accent/60" />
               <div>
-                <p className="text-sm font-semibold">{modes[mode]?.label}</p>
-                <p className="mt-1 max-w-sm text-xs text-muted">{modes[mode]?.blurb}</p>
+                <p className="text-base font-semibold">{modes[mode]?.label}</p>
+                <p className="mt-1 max-w-md text-xs text-muted">{modes[mode]?.blurb}</p>
               </div>
-              <div className="flex flex-wrap justify-center gap-2">
+              <div className="flex flex-wrap justify-center gap-2 max-w-xl">
                 {(modes[mode]?.prompts || []).map((p) => (
                   <Button key={p} size="sm" variant="secondary" onClick={() => send(p)} disabled={busy || !hasKey}>
                     {p}
@@ -291,7 +303,7 @@ export default function Tutor() {
           <div ref={bottomRef} />
         </div>
 
-        <div className="border-t border-line p-3">
+        <div className="border-t border-line p-3 shrink-0 bg-surface/50">
           <div className="flex items-end gap-2">
             <textarea
               value={input}
@@ -305,7 +317,7 @@ export default function Tutor() {
               placeholder={hasKey ? `Ask the tutor (${modes[mode]?.label || mode})…` : 'Add an AI key in Settings to chat'}
               disabled={!hasKey || busy}
               rows={2}
-              className="min-h-[52px] flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/60 disabled:opacity-50"
+              className="min-h-[52px] max-h-[160px] flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/60 disabled:opacity-50"
             />
             <Button
               onClick={() => (busy ? stop() : send())}

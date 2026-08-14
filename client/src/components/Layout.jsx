@@ -169,8 +169,8 @@ export default function Layout() {
             {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <div className="mx-auto max-w-5xl">
+        <main className="flex flex-1 overflow-y-auto p-3 lg:p-4 min-h-0">
+          <div className="flex w-full flex-1 flex-col min-h-0">
             <Outlet />
           </div>
         </main>
