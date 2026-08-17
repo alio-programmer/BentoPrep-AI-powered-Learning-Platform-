@@ -24,6 +24,14 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Temp
+# Temp & Diagnostics / Scratch
 *.tmp
 *.temp
+diag*.mjs
+*diag*
+*token.txt
+*login.json
+putsettings.json
+repro.mjs
+setup-debug.mjs
+
