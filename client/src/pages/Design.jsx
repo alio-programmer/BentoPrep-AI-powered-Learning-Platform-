@@ -198,78 +198,80 @@ export default function Design() {
   const topicList = track === 'lld' ? topics.lld : topics.hld;
 
   return (
-    <div>
-      <PageHeader
-        title="System Design Lab"
-        subtitle="Learn Low-Level and High-Level design with an AI tutor that uses your own API key."
-      />
+    <div className="flex flex-1 flex-col h-full min-h-0 w-full gap-3">
+      <div className="shrink-0 space-y-3">
+        <PageHeader
+          title="System Design Lab"
+          subtitle="Learn Low-Level and High-Level design with an AI tutor that uses your own API key."
+        />
 
-      <div className="mb-5 grid gap-2 sm:grid-cols-2">
-        <button
-          onClick={() => selectTrack('lld')}
-          className={cn(
-            'flex items-center gap-3 rounded-xl border p-4 text-left transition-all',
-            track === 'lld' ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-accent/40'
-          )}
-        >
-          <Boxes className={cn('size-5', track === 'lld' ? 'text-accent' : 'text-muted')} />
-          <div>
-            <p className="text-sm font-semibold">Low-Level Design (LLD)</p>
-            <p className="text-xs text-muted">Classes, patterns, SOLID, object modeling</p>
-          </div>
-        </button>
-        <button
-          onClick={() => selectTrack('hld')}
-          className={cn(
-            'flex items-center gap-3 rounded-xl border p-4 text-left transition-all',
-            track === 'hld' ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-accent/40'
-          )}
-        >
-          <Layout className={cn('size-5', track === 'hld' ? 'text-accent' : 'text-muted')} />
-          <div>
-            <p className="text-sm font-semibold">High-Level Design (HLD)</p>
-            <p className="text-xs text-muted">Architecture, scaling, trade-offs, data flow</p>
-          </div>
-        </button>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            onClick={() => selectTrack('lld')}
+            className={cn(
+              'flex items-center gap-3 rounded-xl border p-3.5 text-left transition-all',
+              track === 'lld' ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-accent/40'
+            )}
+          >
+            <Boxes className={cn('size-5 shrink-0', track === 'lld' ? 'text-accent' : 'text-muted')} />
+            <div>
+              <p className="text-sm font-semibold">Low-Level Design (LLD)</p>
+              <p className="text-xs text-muted">Classes, patterns, SOLID, object modeling</p>
+            </div>
+          </button>
+          <button
+            onClick={() => selectTrack('hld')}
+            className={cn(
+              'flex items-center gap-3 rounded-xl border p-3.5 text-left transition-all',
+              track === 'hld' ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-accent/40'
+            )}
+          >
+            <Layout className={cn('size-5 shrink-0', track === 'hld' ? 'text-accent' : 'text-muted')} />
+            <div>
+              <p className="text-sm font-semibold">High-Level Design (HLD)</p>
+              <p className="text-xs text-muted">Architecture, scaling, trade-offs, data flow</p>
+            </div>
+          </button>
+        </div>
+
+        {!hasKey && (
+          <Card className="flex items-start gap-3 border-warn/40 bg-warn-soft/40 p-3.5">
+            <BookOpen className="mt-0.5 size-4 shrink-0 text-warn" />
+            <div>
+              <p className="text-sm font-semibold">Add your AI key to unlock the tutor</p>
+              <p className="mt-0.5 text-xs text-muted">
+                Go to <a href="/settings" className="font-medium text-accent underline">Settings → AI Provider</a> to add your DeepSeek / OpenAI API key.
+              </p>
+            </div>
+          </Card>
+        )}
+
+        <div className="flex w-fit rounded-xl border border-line bg-surface p-1">
+          <button
+            onClick={() => switchMode('learn')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition-all',
+              mode === 'learn' ? 'bg-accent text-white shadow-sm' : 'text-muted hover:text-ink'
+            )}
+          >
+            <GraduationCap className="size-4" />
+            Learn Concepts
+          </button>
+          <button
+            onClick={() => switchMode('practice')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition-all',
+              mode === 'practice' ? 'bg-accent text-white shadow-sm' : 'text-muted hover:text-ink'
+            )}
+          >
+            <PencilRuler className="size-4" />
+            Practice Design
+          </button>
+        </div>
       </div>
 
-      {!hasKey && (
-        <Card className="mb-5 flex items-start gap-3 border-warn/40 bg-warn-soft/40 p-4">
-          <BookOpen className="mt-0.5 size-4 shrink-0 text-warn" />
-          <div>
-            <p className="text-sm font-semibold">Add your AI key to unlock the tutor</p>
-            <p className="mt-0.5 text-xs text-muted">
-              Go to <a href="/settings" className="font-medium text-accent underline">Settings → AI Provider</a> to add your DeepSeek / OpenAI API key.
-            </p>
-          </div>
-        </Card>
-      )}
-
-      <div className="mb-4 flex w-fit rounded-xl border border-line bg-surface p-1">
-        <button
-          onClick={() => switchMode('learn')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
-            mode === 'learn' ? 'bg-accent text-white shadow-sm' : 'text-muted hover:text-ink'
-          )}
-        >
-          <GraduationCap className="size-4" />
-          Learn Concepts
-        </button>
-        <button
-          onClick={() => switchMode('practice')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
-            mode === 'practice' ? 'bg-accent text-white shadow-sm' : 'text-muted hover:text-ink'
-          )}
-        >
-          <PencilRuler className="size-4" />
-          Practice Design
-        </button>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-        <Card className="h-[560px] overflow-y-auto p-3">
+      <div className="grid flex-1 min-h-[500px] lg:min-h-0 gap-4 lg:grid-cols-[280px_1fr]">
+        <Card className="h-[320px] lg:h-full min-h-0 overflow-y-auto p-3">
           {mode === 'learn' ? (
             <div className="space-y-4">
               {(curriculum[track] || []).map((group) => (
@@ -314,8 +316,8 @@ export default function Design() {
           )}
         </Card>
 
-        <Card className="flex h-[560px] flex-col overflow-hidden p-0">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-3">
+        <Card className="flex min-h-[480px] lg:min-h-0 lg:h-full flex-1 flex-col overflow-hidden p-0 shadow-sm border border-line">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-3 shrink-0 bg-surface/50">
             <Sparkles className="size-4 text-accent" />
             <p className="text-sm font-semibold">
               {selected || 'Select a topic'}
@@ -333,9 +335,9 @@ export default function Design() {
             </div>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <div className="flex-1 space-y-3 overflow-y-auto p-4 min-h-0">
             {messages.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+              <div className="flex h-full flex-col items-center justify-center gap-4 text-center py-6">
                 <Sparkles className="size-8 text-accent/60" />
                 <div>
                   <p className="text-sm font-semibold">{mode === 'learn' ? 'Learn with the AI tutor' : 'Start designing'}</p>
@@ -370,7 +372,7 @@ export default function Design() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="border-t border-line p-3">
+          <div className="border-t border-line p-3 shrink-0 bg-surface/50">
             <div className="flex items-end gap-2">
               <textarea
                 value={input}
@@ -384,7 +386,7 @@ export default function Design() {
                 placeholder={hasKey ? `Ask about ${selected || track.toUpperCase()}…` : 'Add an AI key in Settings to chat'}
                 disabled={!hasKey || busy}
                 rows={2}
-                className="min-h-[52px] flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/60 disabled:opacity-50"
+                className="min-h-[52px] max-h-[160px] flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/60 disabled:opacity-50"
               />
               <Button
                 onClick={() => (busy ? stop() : send())}

@@ -34,9 +34,14 @@ function normalizeBaseUrl(url) {
 }
 
 // Dispatch to the right protocol based on the configured provider.
-export function chatCompletion(opts) {
-  if (opts.provider === 'anthropic') return anthropicChatCompletion(opts);
-  return openAiChatCompletion(opts);
+export async function chatCompletion(opts) {
+  try {
+    if (opts.provider === 'anthropic') return await anthropicChatCompletion(opts);
+    return await openAiChatCompletion(opts);
+  } catch (err) {
+    console.error('[ai] chatCompletion failed:', err?.message || err);
+    throw err;
+  }
 }
 
 // Low-level chat completion call (OpenAI-compatible protocol).
@@ -131,10 +136,17 @@ export async function testConnection(settings) {
 // every AI route that consumes a key.
 export function resolveSettings(stored) {
   const preset = PROVIDERS[stored?.ai_provider] || PROVIDERS.deepseek;
+  let apiKey = '';
+  try {
+    apiKey = decryptSecret(stored?.ai_api_key);
+  } catch (err) {
+    console.error('[ai] failed to decrypt saved API key:', err?.message || err);
+    throw err;
+  }
   return {
     provider: stored?.ai_provider || 'deepseek',
     baseUrl: stored?.ai_base_url || preset.baseUrl,
     model: stored?.ai_model || preset.model,
-    apiKey: decryptSecret(stored?.ai_api_key),
+    apiKey,
   };
 }

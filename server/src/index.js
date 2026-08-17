@@ -38,9 +38,20 @@ app.use(
 );
 app.use(express.json({ limit: '2mb' }));
 
-app.get('/api/health', (_req, res) =>
-  res.json({ ok: true, service: 'bentoprep-server', supabase: isConfigured })
-);
+app.get('/api/health', (_req, res) => {
+  let encryptionConfigured = true;
+  try {
+    getEncryptionKey();
+  } catch {
+    encryptionConfigured = false;
+  }
+  res.json({
+    ok: true,
+    service: 'bentoprep-server',
+    supabase: isConfigured,
+    encryptionConfigured,
+  });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/problems', problemRoutes);

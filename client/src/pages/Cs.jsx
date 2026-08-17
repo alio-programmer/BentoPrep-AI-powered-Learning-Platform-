@@ -203,71 +203,73 @@ export default function Cs() {
   const topicList = topics[subject] || [];
 
   return (
-    <div>
-      <PageHeader
-        title="CS Fundamentals"
-        subtitle="Master DBMS, Computer Networks and Operating Systems with an AI tutor that uses your own API key."
-      />
+    <div className="flex flex-1 flex-col h-full min-h-0 w-full gap-3">
+      <div className="shrink-0 space-y-3">
+        <PageHeader
+          title="CS Fundamentals"
+          subtitle="Master DBMS, Computer Networks and Operating Systems with an AI tutor that uses your own API key."
+        />
 
-      <div className="mb-5 grid gap-2 sm:grid-cols-3">
-        {Object.entries(SUBJECTS).map(([key, meta]) => {
-          const Icon = meta.icon;
-          return (
-            <button
-              key={key}
-              onClick={() => selectSubject(key)}
-              className={cn(
-                'flex items-center gap-3 rounded-xl border p-4 text-left transition-all',
-                subject === key ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-accent/40'
-              )}
-            >
-              <Icon className={cn('size-5 shrink-0', subject === key ? 'text-accent' : 'text-muted')} />
-              <div>
-                <p className="text-sm font-semibold">{meta.short}</p>
-                <p className="text-xs text-muted">{meta.blurb}</p>
-              </div>
-            </button>
-          );
-        })}
+        <div className="grid gap-2 sm:grid-cols-3">
+          {Object.entries(SUBJECTS).map(([key, meta]) => {
+            const Icon = meta.icon;
+            return (
+              <button
+                key={key}
+                onClick={() => selectSubject(key)}
+                className={cn(
+                  'flex items-center gap-3 rounded-xl border p-3.5 text-left transition-all',
+                  subject === key ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:border-accent/40'
+                )}
+              >
+                <Icon className={cn('size-5 shrink-0', subject === key ? 'text-accent' : 'text-muted')} />
+                <div>
+                  <p className="text-sm font-semibold">{meta.short}</p>
+                  <p className="text-xs text-muted">{meta.blurb}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {!hasKey && (
+          <Card className="flex items-start gap-3 border-warn/40 bg-warn-soft/40 p-3.5">
+            <BookOpen className="mt-0.5 size-4 shrink-0 text-warn" />
+            <div>
+              <p className="text-sm font-semibold">Add your AI key to unlock the tutor</p>
+              <p className="mt-0.5 text-xs text-muted">
+                Go to <a href="/settings" className="font-medium text-accent underline">Settings → AI Provider</a> to add your DeepSeek / OpenAI API key.
+              </p>
+            </div>
+          </Card>
+        )}
+
+        <div className="flex w-fit rounded-xl border border-line bg-surface p-1">
+          <button
+            onClick={() => switchMode('learn')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition-all',
+              mode === 'learn' ? 'bg-accent text-white shadow-sm' : 'text-muted hover:text-ink'
+            )}
+          >
+            <GraduationCap className="size-4" />
+            Learn Concepts
+          </button>
+          <button
+            onClick={() => switchMode('practice')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition-all',
+              mode === 'practice' ? 'bg-accent text-white shadow-sm' : 'text-muted hover:text-ink'
+            )}
+          >
+            <PencilRuler className="size-4" />
+            Practice
+          </button>
+        </div>
       </div>
 
-      {!hasKey && (
-        <Card className="mb-5 flex items-start gap-3 border-warn/40 bg-warn-soft/40 p-4">
-          <BookOpen className="mt-0.5 size-4 shrink-0 text-warn" />
-          <div>
-            <p className="text-sm font-semibold">Add your AI key to unlock the tutor</p>
-            <p className="mt-0.5 text-xs text-muted">
-              Go to <a href="/settings" className="font-medium text-accent underline">Settings → AI Provider</a> to add your DeepSeek / OpenAI API key.
-            </p>
-          </div>
-        </Card>
-      )}
-
-      <div className="mb-4 flex w-fit rounded-xl border border-line bg-surface p-1">
-        <button
-          onClick={() => switchMode('learn')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
-            mode === 'learn' ? 'bg-accent text-white shadow-sm' : 'text-muted hover:text-ink'
-          )}
-        >
-          <GraduationCap className="size-4" />
-          Learn Concepts
-        </button>
-        <button
-          onClick={() => switchMode('practice')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
-            mode === 'practice' ? 'bg-accent text-white shadow-sm' : 'text-muted hover:text-ink'
-          )}
-        >
-          <PencilRuler className="size-4" />
-          Practice
-        </button>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-        <Card className="h-[560px] overflow-y-auto p-3">
+      <div className="grid flex-1 min-h-[500px] lg:min-h-0 gap-4 lg:grid-cols-[280px_1fr]">
+        <Card className="h-[320px] lg:h-full min-h-0 overflow-y-auto p-3">
           {mode === 'learn' ? (
             <div className="space-y-4">
               {(curriculum[subject] || []).map((group) => (
@@ -312,8 +314,8 @@ export default function Cs() {
           )}
         </Card>
 
-        <Card className="flex h-[560px] flex-col overflow-hidden p-0">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-3">
+        <Card className="flex min-h-[480px] lg:min-h-0 lg:h-full flex-1 flex-col overflow-hidden p-0 shadow-sm border border-line">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-3 shrink-0 bg-surface/50">
             <Sparkles className="size-4 text-accent" />
             <p className="text-sm font-semibold">
               {selected || 'Select a topic'}
@@ -331,9 +333,9 @@ export default function Cs() {
             </div>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <div className="flex-1 space-y-3 overflow-y-auto p-4 min-h-0">
             {messages.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+              <div className="flex h-full flex-col items-center justify-center gap-4 text-center py-6">
                 <Sparkles className="size-8 text-accent/60" />
                 <div>
                   <p className="text-sm font-semibold">{mode === 'learn' ? 'Learn with the AI tutor' : 'Start practicing'}</p>
@@ -368,7 +370,7 @@ export default function Cs() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="border-t border-line p-3">
+          <div className="border-t border-line p-3 shrink-0 bg-surface/50">
             <div className="flex items-end gap-2">
               <textarea
                 value={input}
@@ -382,7 +384,7 @@ export default function Cs() {
                 placeholder={hasKey ? `Ask about ${selected || subjectMeta.short}…` : 'Add an AI key in Settings to chat'}
                 disabled={!hasKey || busy}
                 rows={2}
-                className="min-h-[52px] flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/60 disabled:opacity-50"
+                className="min-h-[52px] max-h-[160px] flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/60 disabled:opacity-50"
               />
               <Button
                 onClick={() => (busy ? stop() : send())}
