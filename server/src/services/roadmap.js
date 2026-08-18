@@ -1,7 +1,7 @@
 // Deterministic (non-AI) roadmap calendar generator for Phase 1.
 // Curated problem bank + topic ordering. AI-enhanced generation is a Phase 2 upgrade.
 
-import { chatCompletion } from './aiProvider.js';
+import { chatCompletion, chatCompletionWithSearch } from './aiProvider.js';
 
 const RESUME_TYPES = new Set(['new', 'revision', 'concept', 'assessment', 'mock']);
 
@@ -39,7 +39,7 @@ function normalizeResumeDays(raw) {
 }
 
 // Generate a personalized roadmap from a resume using the user's AI provider.
-export async function generateResumeRoadmap({ resume, settings, duration_days, daily_availability }) {
+export async function generateResumeRoadmap({ resume, settings, duration_days, daily_availability, webSearch }) {
   const days = Math.min(Math.max(Number(duration_days) || 30, 7), 90);
   const parts = [`Resume file: ${resume.name}`];
   if (resume.target_role) parts.push(`Target role: ${resume.target_role}`);
@@ -64,7 +64,8 @@ Rules:
 - Mix DSA, system design, SQL, projects/behavioral (STAR) and weekly assessments.
 - Task names must be concrete and actionable.`;
 
-  const reply = await chatCompletion({
+  const searchQuery = `${resume.target_role || 'software engineer'} interview preparation study plan roadmap`;
+  const { reply } = await chatCompletionWithSearch({
     baseUrl: settings.baseUrl || settings.ai_base_url,
     provider: settings.provider,
     apiKey: settings.apiKey || settings.ai_api_key,
@@ -74,6 +75,8 @@ Rules:
       { role: 'user', content: parts.join('\n') },
     ],
     temperature: 0.6,
+    searchEnabled: Boolean(webSearch),
+    searchQuery,
   });
 
   const parsed = extractJson(reply);
@@ -87,7 +90,7 @@ Rules:
 }
 
 // AI-based generator for DSA / SQL tracks (no resume required).
-export async function generateAiRoadmap({ track, level = 'Intermediate', target = 'General DSA', duration_days, daily_availability, settings }) {
+export async function generateAiRoadmap({ track, level = 'Intermediate', target = 'General DSA', duration_days, daily_availability, settings, webSearch }) {
   const days = Math.min(Math.max(Number(duration_days) || 30, 7), 90);
   const bank = track === 'sql' ? SQL_TOPICS : TOPICS;
   const topicBank = bank.map((t) => `${t.topic}: ${t.problems.map((p) => p[0]).join(', ')}`).join('\n');
@@ -107,7 +110,8 @@ Rules:
 
   const user = `Target: ${target}\nLevel: ${level}\n\nTopic bank:\n${topicBank}`;
 
-  const reply = await chatCompletion({
+  const searchQuery = `${trackLabel} ${target} interview preparation roadmap study plan`;
+  const { reply } = await chatCompletionWithSearch({
     baseUrl: settings.baseUrl || settings.ai_base_url,
     provider: settings.provider,
     apiKey: settings.apiKey || settings.ai_api_key,
@@ -117,6 +121,8 @@ Rules:
       { role: 'user', content: user },
     ],
     temperature: 0.6,
+    searchEnabled: Boolean(webSearch),
+    searchQuery,
   });
 
   const parsed = extractJson(reply);
@@ -130,7 +136,7 @@ Rules:
 }
 
 // AI-based generator for a user-specified custom topic (no problem bank).
-export async function generateCustomRoadmap({ topic, level = 'Beginner', duration_days, daily_availability, settings }) {
+export async function generateCustomRoadmap({ topic, level = 'Beginner', duration_days, daily_availability, settings, webSearch }) {
   const days = Math.min(Math.max(Number(duration_days) || 30, 7), 90);
   const topicLabel = String(topic || '').trim().slice(0, 200) || 'Custom Topic';
 
@@ -147,7 +153,8 @@ Rules:
 - Tasks must be concrete and actionable for a ${level} level learner.
 - Anchor everything in the topic "${topicLabel}" — never drift to unrelated material.`;
 
-  const reply = await chatCompletion({
+  const searchQuery = `${topicLabel} learning roadmap study guide practice`;
+  const { reply } = await chatCompletionWithSearch({
     baseUrl: settings.baseUrl || settings.ai_base_url,
     provider: settings.provider,
     apiKey: settings.apiKey || settings.ai_api_key,
@@ -157,6 +164,8 @@ Rules:
       { role: 'user', content: `Topic to master: ${topicLabel}\nLevel: ${level}\nDuration: ${days} days\nDaily availability: ${daily_availability || '2 hours'}` },
     ],
     temperature: 0.6,
+    searchEnabled: Boolean(webSearch),
+    searchQuery,
   });
 
   const parsed = extractJson(reply);

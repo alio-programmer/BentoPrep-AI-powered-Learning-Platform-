@@ -210,6 +210,21 @@ create table if not exists public.resumes (
   updated_at timestamptz default now()
 );
 
+-- ---------- Saved Roadmaps (curated library of saved plans) ----------
+create table if not exists public.saved_roadmaps (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  track text not null default 'custom',
+  duration_days integer not null,
+  level text,
+  target text,
+  daily_availability text,
+  days jsonb not null default '[]',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 -- ---------- Indexes ----------
 create index if not exists idx_problems_user on public.problems(user_id);
 create index if not exists idx_problems_topic on public.problems(topic);
@@ -224,6 +239,7 @@ create index if not exists idx_sql_topic on public.sql_problems(topic);
 create index if not exists idx_resumes_user on public.resumes(user_id);
 create index if not exists idx_chat_sessions_user_channel on public.chat_sessions(user_id, channel);
 create index if not exists idx_ai_credentials_user on public.ai_credentials(user_id);
+create index if not exists idx_saved_roadmaps_user on public.saved_roadmaps(user_id, track, updated_at);
 
 -- ---------- Auto-create profile on signup ----------
 create or replace function public.handle_new_user()
@@ -283,6 +299,10 @@ drop trigger if exists trg_ai_credentials_updated on public.ai_credentials;
 create trigger trg_ai_credentials_updated before update on public.ai_credentials
   for each row execute procedure public.set_updated_at();
 
+drop trigger if exists trg_saved_roadmaps_updated on public.saved_roadmaps;
+create trigger trg_saved_roadmaps_updated before update on public.saved_roadmaps
+  for each row execute procedure public.set_updated_at();
+
 -- ---------- Row Level Security ----------
 alter table public.profiles enable row level security;
 alter table public.user_settings enable row level security;
@@ -296,6 +316,7 @@ alter table public.sql_problems enable row level security;
 alter table public.resumes enable row level security;
 alter table public.chat_sessions enable row level security;
 alter table public.ai_credentials enable row level security;
+alter table public.saved_roadmaps enable row level security;
 
 create policy "own profile" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
@@ -332,3 +353,7 @@ create policy "own chats" on public.chat_sessions
 
 create policy "own credentials" on public.ai_credentials
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "own saved roadmaps" on public.saved_roadmaps
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+

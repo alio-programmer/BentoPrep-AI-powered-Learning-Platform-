@@ -5,6 +5,8 @@ import { fmt } from '../lib/markdown.jsx';
 import {
   Button, Card, Loading, EmptyState, Modal, Select, Input, Badge, PageHeader, cn,
 } from '../components/ui.jsx';
+import { SavedRoadmaps } from '../components/SavedRoadmaps.jsx';
+import { WebSearchToggle } from '../components/WebSearchToggle.jsx';
 
 const TYPE_META = {
   new: { label: 'New', cell: 'bg-info-soft text-info border-info', dot: 'bg-info' },
@@ -41,23 +43,50 @@ export default function Roadmap() {
   const [resumes, setResumes] = useState([]);
   const [resumeId, setResumeId] = useState('');
   const [useAi, setUseAi] = useState(true);
+  const [webSearchGen, setWebSearchGen] = useState(true);
+  const [webSearchExplain, setWebSearchExplain] = useState(true);
   const [form, setForm] = useState({ duration_days: 45, level: 'Intermediate', target: 'FAANG', daily_availability: '2 hours', custom_topic: '' });
   const [explaining, setExplaining] = useState(null);
   const [explanations, setExplanations] = useState({});
+  const [savedList, setSavedList] = useState([]);
+  const [activeSavedId, setActiveSavedId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const fetchSavedList = async (t = track) => {
+    try {
+      const { data } = await api.get(`/roadmap/saved?track=${t}`);
+      setSavedList(data.sessions || []);
+      return data.sessions || [];
+    } catch {
+      setSavedList([]);
+      return [];
+    }
+  };
 
   const fetchData = async (t = track) => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/roadmap?track=${t}`);
-      setRoadmap(data.roadmap);
-      setDays(data.days);
+      const [{ data: roadmapData }, saved] = await Promise.all([
+        api.get(`/roadmap?track=${t}`),
+        fetchSavedList(t),
+      ]);
+      setRoadmap(roadmapData.roadmap);
+      setDays(roadmapData.days || []);
       const seed = {};
-      (data.days || []).forEach((day) => {
+      (roadmapData.days || []).forEach((day) => {
         Object.entries(day.task_explanations || {}).forEach(([idx, text]) => {
           seed[`${day.id}:${idx}`] = { text, hidden: false };
         });
       });
       setExplanations(seed);
+
+      // Check if current roadmap is matching any saved plan
+      if (roadmapData.roadmap) {
+        const match = saved.find((s) => s.target === roadmapData.roadmap.target || s.title === roadmapData.roadmap.target);
+        setActiveSavedId(match ? match.id : null);
+      } else {
+        setActiveSavedId(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -84,16 +113,73 @@ export default function Roadmap() {
     setGenerating(true);
     try {
       await api.post('/roadmap', track === 'resume'
-        ? { track, resumeId, duration_days: form.duration_days, daily_availability: form.daily_availability }
+        ? { track, resumeId, duration_days: form.duration_days, daily_availability: form.daily_availability, webSearch: webSearchGen }
         : track === 'custom'
-          ? { track, custom_topic: form.custom_topic, duration_days: form.duration_days, daily_availability: form.daily_availability, level: form.level }
-          : { ...form, track, ai: useAi });
+          ? { track, custom_topic: form.custom_topic, duration_days: form.duration_days, daily_availability: form.daily_availability, level: form.level, webSearch: webSearchGen }
+          : { ...form, track, ai: useAi, webSearch: useAi ? webSearchGen : false });
+      setActiveSavedId(null);
       await fetchData(track);
       setOpen(false);
     } catch (err) {
       alert(errorMessage(err, 'Failed to generate roadmap.'));
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const saveCurrentPlan = async () => {
+    if (!roadmap || isSaving) return;
+    setIsSaving(true);
+    try {
+      const { data } = await api.post('/roadmap/save', {
+        track,
+        title: roadmap.target,
+        savedId: activeSavedId || undefined,
+      });
+      if (data.saved) {
+        setActiveSavedId(data.saved.id);
+        await fetchSavedList(track);
+      }
+    } catch (err) {
+      alert(errorMessage(err, 'Failed to save roadmap.'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const restoreSavedPlan = async (savedId) => {
+    if (!savedId) return;
+    setLoading(true);
+    try {
+      const { data } = await api.post(`/roadmap/saved/${savedId}/restore`);
+      setRoadmap(data.roadmap);
+      setDays(data.days || []);
+      setActiveSavedId(savedId);
+      const seed = {};
+      (data.days || []).forEach((day) => {
+        Object.entries(day.task_explanations || {}).forEach(([idx, text]) => {
+          seed[`${day.id}:${idx}`] = { text, hidden: false };
+        });
+      });
+      setExplanations(seed);
+      await fetchSavedList(track);
+    } catch (err) {
+      alert(errorMessage(err, 'Failed to restore saved plan.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteSavedPlan = async (savedId) => {
+    if (!savedId) return;
+    try {
+      await api.delete(`/roadmap/saved/${savedId}`);
+      if (activeSavedId === savedId) {
+        setActiveSavedId(null);
+      }
+      await fetchSavedList(track);
+    } catch (err) {
+      alert(errorMessage(err, 'Failed to delete saved plan.'));
     }
   };
 
@@ -128,6 +214,7 @@ export default function Roadmap() {
         task: task.name,
         topic: task.topic,
         difficulty: task.difficulty,
+        webSearch: webSearchExplain,
       });
       setExplanations((m) => ({ ...m, [key]: { text: data.explanation, hidden: false } }));
     } catch (err) {
@@ -146,6 +233,7 @@ export default function Roadmap() {
   const weeks = [];
   for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
   const doneCount = days.filter((d) => d.status === 'done').length;
+  const isCurrentlySaved = Boolean(activeSavedId || (roadmap && savedList.some((s) => s.target === roadmap.target || s.title === roadmap.target)));
 
   return (
     <div>
@@ -153,9 +241,22 @@ export default function Roadmap() {
         title="Roadmap"
         subtitle={roadmap ? `${roadmap.duration_days}-day plan · ${roadmap.target} · ${roadmap.level || 'Resume-based'}` : 'Your personalized preparation calendar.'}
         actions={
-          <Button onClick={openModal} size="lg">
-            <RefreshCw className="size-4" /> {roadmap ? 'Regenerate' : 'Generate roadmap'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <SavedRoadmaps
+              savedList={savedList}
+              activeSavedId={activeSavedId}
+              onSelect={restoreSavedPlan}
+              onSave={saveCurrentPlan}
+              onDelete={deleteSavedPlan}
+              isSaving={isSaving}
+              isSaved={isCurrentlySaved}
+              hasActiveRoadmap={Boolean(roadmap)}
+              disabled={generating}
+            />
+            <Button onClick={openModal} size="md">
+              <RefreshCw className="size-4" /> {roadmap ? 'Regenerate' : 'Generate roadmap'}
+            </Button>
+          </div>
         }
       />
 
@@ -333,19 +434,30 @@ export default function Roadmap() {
                                         {t.topic && <Badge>{t.topic}</Badge>}
                                         {t.difficulty && difficultyBadge(t.difficulty)}
                                       </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => (expl?.text ? toggleExplanation(key) : explainWithAI(day, t, i))}
-                                        disabled={explaining === key || expl?.loading}
-                                        className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-soft px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/15 disabled:opacity-50"
-                                      >
-                                        {expl?.loading ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
-                                        {expl?.loading
-                                          ? 'Explaining…'
-                                          : expl?.text
-                                            ? (expl.hidden ? 'Show explanation' : 'Hide explanation')
-                                            : (expl?.error ? 'Try again' : 'Explain with AI')}
-                                      </button>
+                                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => (expl?.text ? toggleExplanation(key) : explainWithAI(day, t, i))}
+                                          disabled={explaining === key || expl?.loading}
+                                          className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-soft px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/15 disabled:opacity-50"
+                                        >
+                                          {expl?.loading ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-3" />}
+                                          {expl?.loading
+                                            ? 'Explaining…'
+                                            : expl?.text
+                                              ? (expl.hidden ? 'Show explanation' : 'Hide explanation')
+                                              : (expl?.error ? 'Try again' : 'Explain with AI')}
+                                        </button>
+                                        {!expl?.text && (
+                                          <WebSearchToggle
+                                            enabled={webSearchExplain}
+                                            onChange={setWebSearchExplain}
+                                            size="sm"
+                                            label="Web search"
+                                            title="Search the web for up-to-date interview explanation and real sources"
+                                          />
+                                        )}
+                                      </div>
                                       {expl?.error && (
                                         <p className="mt-2 rounded-md bg-danger-soft px-2 py-1.5 text-[11px] text-danger">{expl.error}</p>
                                       )}
@@ -457,6 +569,22 @@ export default function Roadmap() {
           <Select label="Daily availability" value={form.daily_availability} onChange={(e) => setForm({ ...form, daily_availability: e.target.value })}>
             <option>30 minutes</option><option>1 hour</option><option>2 hours</option><option>3+ hours</option>
           </Select>
+
+          {(track === 'custom' || track === 'resume' || useAi) && (
+            <div className="flex items-center justify-between rounded-lg border border-line bg-surface p-2.5">
+              <div className="min-w-0 pr-2">
+                <p className="text-xs font-medium text-ink">Web Search Context</p>
+                <p className="text-[11px] text-muted">Search web for up-to-date topics & learning resources</p>
+              </div>
+              <WebSearchToggle
+                enabled={webSearchGen}
+                onChange={setWebSearchGen}
+                size="sm"
+                label={webSearchGen ? 'On' : 'Off'}
+              />
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={generate} disabled={generating || (track === 'resume' && !resumeId) || (track === 'custom' && !form.custom_topic.trim())}>

@@ -3,6 +3,7 @@
 // endpoints share the OpenAI protocol; Anthropic uses its own Messages API.
 
 import { decryptSecret } from './crypto.js';
+import { searchWeb, formatSearchContext, formatSourcesMarkdown } from './webSearch.js';
 
 export const PROVIDERS = {
   deepseek: {
@@ -42,6 +43,65 @@ export async function chatCompletion(opts) {
     console.error('[ai] chatCompletion failed:', err?.message || err);
     throw err;
   }
+}
+
+// Search-augmented chat completion. Injects web search context when searchEnabled is true.
+export async function chatCompletionWithSearch(opts) {
+  const {
+    searchEnabled = false,
+    searchQuery = '',
+    appendSources = false,
+    ...baseOpts
+  } = opts;
+
+  if (!searchEnabled || !searchQuery) {
+    const reply = await chatCompletion(baseOpts);
+    return { reply, searchUsed: false, sources: [] };
+  }
+
+  const { results } = await searchWeb(searchQuery, { maxResults: 3 });
+
+  if (!results.length) {
+    const reply = await chatCompletion(baseOpts);
+    return { reply, searchUsed: false, sources: [] };
+  }
+
+  const searchContext = formatSearchContext(results);
+  const existingMessages = baseOpts.messages || [];
+
+  const systemIdx = existingMessages.findIndex((m) => m.role === 'system');
+  let augmentedMessages;
+  if (systemIdx !== -1) {
+    augmentedMessages = existingMessages.map((m, i) => {
+      if (i === systemIdx) {
+        return {
+          ...m,
+          content: `${m.content}\n\n${searchContext}`,
+        };
+      }
+      return m;
+    });
+  } else {
+    augmentedMessages = [
+      { role: 'system', content: searchContext },
+      ...existingMessages,
+    ];
+  }
+
+  let reply = await chatCompletion({
+    ...baseOpts,
+    messages: augmentedMessages,
+  });
+
+  if (appendSources && results.length > 0) {
+    reply = `${reply}${formatSourcesMarkdown(results)}`;
+  }
+
+  return {
+    reply,
+    searchUsed: true,
+    sources: results.map((r) => ({ title: r.title, url: r.url })),
+  };
 }
 
 // Low-level chat completion call (OpenAI-compatible protocol).
